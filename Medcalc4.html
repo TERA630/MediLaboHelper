@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>診療支援</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f4f6f8;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form-section {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      width: 200px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input, select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      padding: 10px 20px;
+      background: #e0e0e0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .tab-button.active {
+      background: #0078d7;
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: flex;
+      gap: 20px;
+    }
+
+    .input-area {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 15px;
+    }
+
+    .input-tile {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-tile span {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .output-area {
+      flex: 1;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow-y: auto;
+      min-height: 120px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="form-section">
+    <div class="form-group">
+      <label for="age">年齢</label>
+      <input type="number" id="age" min="0" step="1" />
+    </div>
+
+    <div class="form-group">
+      <label for="gender">性別</label>
+      <select id="gender">
+        <option value="">選択してください</option>
+        <option value="male">男性</option>
+        <option value="female">女性</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="height">身長 (cm)</label>
+      <input type="number" id="height" step="any" />
+    </div>
+
+    <div class="form-group">
+      <label for="weight">体重 (kg)</label>
+      <input type="number" id="weight" step="any" />
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-button active" data-tab="renal">腎機能・電解質</button>
+    <button class="tab-button" data-tab="glucose">糖代謝</button>
+    <button class="tab-button" data-tab="lipid">脂質異常</button>
+    <button class="tab-button" data-tab="liver">肝機能</button>
+    <button class="tab-button" data-tab="anemia">貧血</button>
+    <button class="tab-button" data-tab="uro">泌尿器</button>
+    <button class="tab-button" data-tab="dateCalc">日付計算</button>
+    <button class="tab-button" data-tab="gamma">γ計算</button>
+  </div>
+
+  <!-- 腎機能･電解質 -->
+  <div id="renal" class="tab-content active">
+    <div class="input-area">
+      <div class="input-tile">
+        <label for="scr">血清クレアチニン</label>
+        <input type="number" id="scr" step="any" />
+        <span>mg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="bun">BUN（血清尿素窒素）</label>
+        <input type="number" id="bun" step="any" />
+        <span>mg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="cys">血清シスタチンC</label>
+        <input type="number" id="cys" step="any" />
+        <span>mg/L</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="na">血清Na</label>
+        <input type="number" id="na" step="any" />
+        <span>mEq/L</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="k">血清K</label>
+        <input type="number" id="k" step="any" />
+        <span>mEq/L</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="ua">血清尿酸</label>
+        <input type="number" id="ua" step="any" />
+        <span>mg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="ucr">尿中クレアチニン</label>
+        <input type="number" id="ucr" step="any" />
+        <span>mg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="una">尿中Na</label>
+        <input type="number" id="una" step="any" />
+        <span>mEq/L</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="uk">尿中K</label>
+        <input type="number" id="uk" step="any" />
+        <span>mEq/L</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="uua">尿中尿酸</label>
+        <input type="number" id="uua" step="any" />
+        <span>mg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="uun">尿中尿素窒素</label>
+        <input type="number" id="uun" step="any" />
+        <span>mg/dL</span>
+      </div>
+    </div>
+
+    <div class="output-area" id="renal-output"></div>
+  </div>
+  <!-- 糖代謝 -->
+  <div id="glucose" class="tab-content">
+    <div class="input-area">
+      <div class="input-tile">
+        <label for="cp">空腹時Cペプチド</label>
+        <input type="number" id="cp" step="any" />
+        <span>ng/mL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="glu">空腹時血糖</label>
+        <input type="number" id="glu" step="any" />
+        <span>mg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="ins">空腹時インスリン</label>
+        <input type="number" id="ins" step="any" />
+        <span>μU/mL</span>
+      </div>
+    </div>
+
+    <div class="output-area" id="glucose-output"></div>
+  </div>
+<!-- 脂質異常 -->
+<div id="lipid" class="tab-content">
+  <div class="input-area">
+
+    <!-- ===== 数値フォーム ===== -->
+    <div class="input-tile">
+      <label for="ldl">LDL-C(実測)</label>
+      <input type="number" id="ldl" step="any" />
+      <span>mg/dL</span>
+    </div>
+
+    <div class="input-tile">
+      <label for="hdl">HDL-C</label>
+      <input type="number" id="hdl" step="any" />
+      <span>mg/dL</span>
+    </div>
+
+    <div class="input-tile">
+      <label for="tc">総コレステロール</label>
+      <input type="number" id="tc" step="any" />
+      <span>mg/dL</span>
+    </div>
+    <div class="input-tile">
+      <label for="tgLipid">中性脂肪</label>
+      <input type="number" id="tgLipid" step="any" />
+      <span>mg/dL</span>
+    </div>
+    <!-- ===== ASCVD ===== -->
+    <div class="input-tile">
+      <label for="cadType">冠動脈疾患</label>
+      <select id="cadType">
+        <option value="">なし</option>
+        <option value="within1y">1年以内発症</option>
+        <option value="multiple">2回以上の既往</option>
+        <option value="after1y">発症後1年以降</option>
+        <option value="stable">安定CAD（再建後）</option>
+      </select>
+      <span>重症度分類に使用</span>
+    </div>
+
+    <div class="input-tile">
+      <label>
+        <input type="checkbox" id="multiVessel" />
+        多枝冠動脈疾患
+      </label>
+    </div>
+
+    <div class="input-tile">
+      <label>
+        <input type="checkbox" id="atheroStroke" />
+        アテローム血栓性脳梗塞
+      </label>
+      <span>
+        頭蓋内/頸動脈50%以上狭窄または弓部粥腫≧4mm
+      </span>
+    </div>
+
+    <div class="input-tile">
+      <label>
+        <input type="checkbox" id="pad" />
+        末梢動脈疾患（PAD）
+      </label>
+      <span>有症候性下肢閉塞症</span>
+    </div>
+
+    <!-- ===== 冠危険因子 ===== -->
+    <div class="input-tile">
+      <label for="dmStatus">糖代謝</label>
+      <select id="dmStatus">
+        <option value="normal">正常</option>
+        <option value="igt">耐糖能異常</option>
+        <option value="dm">糖尿病（合併症なし）</option>
+        <option value="dmComp">糖尿病性細小血管障害あり</option>
+      </select>
+    </div>
+
+    <div class="input-tile">
+      <label for="ckdGrade">CKD Grade</label>
+      <select id="ckdGrade">
+        <option value="g1">G1・G2</option>
+        <option value="g3">G3a・G3b</option>
+        <option value="g4">G4・G5</option>
+      </select>
+    </div>
+
+    <div class="input-tile">
+      <label for="proteinuria">蛋白尿</label>
+      <select id="proteinuria">
+        <option value="a1">A1</option>
+        <option value="a2">A2</option>
+        <option value="a3">A3</option>
+      </select>
+    </div>
+
+    <div class="input-tile">
+      <label for="htGrade">高血圧</label>
+      <select id="htGrade">
+        <option value="normal">&lt;120</option>
+        <option value="elevated">120–129</option>
+        <option value="stage1">130–139</option>
+        <option value="stage2">140–159</option>
+        <option value="stage3">160以上</option>
+      </select>
+    </div>
+
+    <div class="input-tile">
+      <label>
+        <input type="checkbox" id="smoking" />
+        喫煙（既往含む）
+      </label>
+    </div>
+
+    <div class="input-tile">
+      <label>
+        <input type="checkbox" id="familyHistory" />
+        冠動脈疾患家族歴
+      </label>
+      <span>男&lt;55 / 女&lt;65</span>
+    </div>
+
+    <div class="input-tile">
+      <label>
+        <input type="checkbox" id="fh" />
+        家族性高コレステロール血症
+      </label>
+    </div>
+
+  </div>
+
+  <div class="output-area" id="lipid-output"></div>
+</div>
+
+
+  <!-- 肝機能 -->
+  <div id="liver" class="tab-content">
+    <div class="input-area">
+      <div class="input-tile">
+        <label for="ast">AST</label>
+        <input type="number" id="ast" step="any" />
+        <span>IU/L</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="alt">ALT</label>
+        <input type="number" id="alt" step="any" />
+        <span>IU/L</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="plt">血小板数</label>
+        <input type="number" id="plt" step="any" />
+        <span>×10⁴/μL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="tg">中性脂肪</label>
+        <input type="number" id="tg" step="any" />
+        <span>mg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="ggt">γ-GTP</label>
+        <input type="number" id="ggt" step="any" />
+        <span>IU/L</span>
+      </div>
+    </div>
+
+    <div class="output-area" id="liver-output"></div>
+  </div>
+
+  <!-- 血液 / 貧血 -->
+  <div id="anemia" class="tab-content">
+    <div class="input-area">
+      <div class="input-tile">
+        <label for="hb">ヘモグロビン</label>
+        <input type="number" id="hb" step="any" />
+        <span>g/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="hct">ヘマトクリット</label>
+        <input type="number" id="hct" step="any" />
+        <span>%</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="rbc">赤血球</label>
+        <input type="number" id="rbc" step="any" />
+        <span>万/mm3</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="mcv">MCV</label>
+        <input type="number" id="mcv" step="any" />
+        <span>fL（Hct・RBCあれば自動算出）</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="retic">網状球</label>
+        <input type="number" id="retic" step="any" />
+        <span>‰</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="ferritin">フェリチン</label>
+        <input type="number" id="ferritin" step="any" />
+        <span>ng/mL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="tibc">TIBC</label>
+        <input type="number" id="tibc" step="any" />
+        <span>μg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="uibc">UIBC</label>
+        <input type="number" id="uibc" step="any" />
+        <span>μg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="serumIron">血清鉄</label>
+        <input type="number" id="serumIron" step="any" />
+        <span>μg/dL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="tsat">鉄飽和率</label>
+        <input type="number" id="tsat" step="any" />
+        <span>%（TIBC・血清鉄あれば自動算出）</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="epo">エリスロポエチン</label>
+        <input type="number" id="epo" step="any" />
+        <span>mIU/mL</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="gfrAnemia">GFR</label>
+        <select id="gfrAnemia">
+          <option value="">選択してください</option>
+          <option value="g1g2">G1,G2：60以上</option>
+          <option value="g3a">G3a：45～59</option>
+          <option value="g3b">G3b：30～44</option>
+          <option value="g4g5">G4,G5：30未満</option>
+          <option value="dialysis">透析中</option>
+        </select>
+        <span>CKD重症度</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="esaTherapy">ESA製剤 / HIF-PH阻害剤投与中</label>
+        <select id="esaTherapy">
+          <option value="">選択してください</option>
+          <option value="yes">あり</option>
+          <option value="no">なし</option>
+        </select>
+        <span>治療状況</span>
+      </div>
+    </div>
+
+    <div class="output-area" id="anemia-output"></div>
+  </div>
+
+  <!-- 泌尿器 -->
+  <div id="uro" class="tab-content">
+    <div class="input-area">
+      <div class="input-tile">
+        <label for="organSelect">対象臓器を選択</label>
+        <select id="organSelect">
+          <option value="prostate">前立腺</option>
+          <option value="bladder">膀胱(排尿前)</option>
+          <option value="resualVol">残尿</option>
+        </select>
+        <span>容積 = 長×短×前後×0.52</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="bladder_long">長軸</label>
+        <input type="number" id="bladder_long" step="any" />
+        <span>cm</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="bladder_short">短軸</label>
+        <input type="number" id="bladder_short" step="any" />
+        <span>cm</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="bladder_ap">前後径</label>
+        <input type="number" id="bladder_ap" step="any" />
+        <span>cm</span>
+      </div>
+    </div>
+
+    <div class="output-area" id="uro-output"></div>
+  </div>
+
+  <!-- 日付計算（日＋週のみ / 終日含むなし） -->
+  <div id="dateCalc" class="tab-content">
+    <div class="input-area">
+      <div class="input-tile">
+        <label for="baseDate">基準日</label>
+        <input type="date" id="baseDate" />
+        <span>起点となる日付</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="daysOffset">日数を加算（±）</label>
+        <input type="number" id="daysOffset" placeholder="例：14 / -7" step="1" />
+        <span>日</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="weeksOffset">週数を加算（±）</label>
+        <input type="number" id="weeksOffset" placeholder="例：6 / -2" step="1" />
+        <span>週（=7日）</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="dateA">日付A</label>
+        <input type="date" id="dateA" />
+        <span>日数差を計算</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="dateB">日付B</label>
+        <input type="date" id="dateB" />
+        <span>A→B の差（日）</span>
+      </div>
+    </div>
+
+    <div class="output-area" id="dateCalc-output"></div>
+  </div>
+
+  <!-- γ計算 -->
+  <div id="gamma" class="tab-content">
+    <style>
+      /* ── γ計算タブ専用スタイル ── */
+      #gamma .gamma-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      #gamma .gamma-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        padding: 16px 18px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #gamma .gamma-card h3 {
+        margin: 0 0 4px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #0078d7;
+        border-bottom: 2px solid #0078d7;
+        padding-bottom: 6px;
+      }
+      #gamma .gamma-card .card-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      #gamma .gamma-card .card-row label {
+        min-width: 130px;
+        font-weight: bold;
+        font-size: 13px;
+        margin: 0;
+      }
+      #gamma .gamma-card .card-row input,
+      #gamma .gamma-card .card-row select {
+        flex: 1;
+        padding: 6px 8px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      #gamma .gamma-card .card-row .unit {
+        font-size: 11px;
+        color: #888;
+        white-space: nowrap;
+        min-width: 52px;
+      }
+      /* 薬剤リファレンスカード：全幅 */
+      #gamma .gamma-card.full-width {
+        grid-column: 1 / -1;
+      }
+      #gamma .drug-ref-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 8px;
+      }
+      #gamma .drug-chip {
+        background: #f0f6ff;
+        border: 1px solid #b8d4f5;
+        border-radius: 7px;
+        padding: 7px 10px;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      #gamma .drug-chip .drug-name {
+        font-weight: 700;
+        color: #0055a8;
+        display: block;
+        margin-bottom: 2px;
+      }
+      #gamma .drug-chip .drug-range {
+        color: #333;
+      }
+      #gamma .drug-chip.selected-drug {
+        background: #fff3cd;
+        border-color: #f5a623;
+      }
+      #gamma .result-highlight {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0055a8;
+      }
+      #gamma .result-note {
+        font-size: 12px;
+        color: #666;
+        margin-top: 2px;
+      }
+      #gamma .warn { color: #c0392b; }
+      #gamma .ok   { color: #27ae60; }
+      #gamma .output-area {
+        min-height: 60px;
+      }
+    </style>
+
+    <div class="gamma-grid">
+
+      <!-- ① 現在のγを計算 -->
+      <div class="gamma-card">
+        <h3>① 現在のγを確認</h3>
+        <div class="card-row">
+          <label>薬剤濃度</label>
+          <input type="number" id="g_conc_a" step="any" placeholder="例：0.16" />
+          <span class="unit">mg/mL</span>
+        </div>
+        <div class="card-row">
+          <label>投与速度</label>
+          <input type="number" id="g_rate_a" step="any" placeholder="例：3.0" />
+          <span class="unit">mL/h</span>
+        </div>
+        <div class="card-row">
+          <label>体重</label>
+          <input type="number" id="g_weight_a" step="any" placeholder="共通フォームから自動" />
+          <span class="unit">kg</span>
+        </div>
+        <div class="output-area" id="gamma-output-a"></div>
+      </div>
+
+      <!-- ② 目標γから投与速度を計算 -->
+      <div class="gamma-card">
+        <h3>② 目標γから速度を算出</h3>
+        <div class="card-row">
+          <label>目標γ</label>
+          <input type="number" id="g_target_gamma" step="any" placeholder="例：5" />
+          <span class="unit">γ</span>
+        </div>
+        <div class="card-row">
+          <label>薬剤濃度</label>
+          <input type="number" id="g_conc_b" step="any" placeholder="例：0.16" />
+          <span class="unit">mg/mL</span>
+        </div>
+        <div class="card-row">
+          <label>体重</label>
+          <input type="number" id="g_weight_b" step="any" placeholder="共通フォームから自動" />
+          <span class="unit">kg</span>
+        </div>
+        <div class="output-area" id="gamma-output-b"></div>
+      </div>
+
+      <!-- ③ 薬剤リファレンス -->
+      <div class="gamma-card full-width">
+        <h3>③ 薬剤別 投与γ範囲リファレンス</h3>
+        <div class="card-row" style="margin-bottom:4px;">
+          <label>薬剤を選択</label>
+          <select id="g_drug_select">
+            <option value="">── 選択してください ──</option>
+            <option value="DOA">DOA（ドパミン）</option>
+            <option value="DOB">DOB（ドブタミン）</option>
+            <option value="NAD">NAD（ノルアドレナリン）</option>
+            <option value="hANP">hANP（カルペリチド）</option>
+            <option value="Landiolol">オノアクト（ランジオロール）</option>
+            <option value="Nifedipine">ニフェジピン</option>
+          </select>
+          <span class="unit"></span>
+        </div>
+        <div class="output-area" id="gamma-output-drug"></div>
+        <div style="margin-top:8px;">
+          <div class="drug-ref-grid" id="gamma-drug-chips"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // =========================
+    // DOM / Utils
+    // =========================
+    function $(id) { return document.getElementById(id); }
+
+    function getNum(id) {
+      var el = $(id);
+      if (!el) return null;
+      var v = parseFloat(el.value);
+      return isFinite(v) ? v : null;
+    }
+
+    function getSelectValue(id) {
+      var el = $(id);
+      return el ? el.value : '';
+    }
+
+    function isChecked(id) {
+      var el = $(id);
+      return !!(el && el.checked);
+    }
+
+    function setMessages(outputId, messages) {
+      var out = $(outputId);
+      if (!out) return;
+
+      if (!messages || !messages.length) {
+        out.innerHTML = '';
+        return;
+      }
+      // 既存の表示スタイル維持（pタグ列 + 一部<b>を許容）
+      var html = '';
+      for (var i = 0; i < messages.length; i++) html += '<p>' + messages[i] + '</p>';
+      out.innerHTML = html;
+    }
+
+    function closestByClass(node, className) {
+      while (node && node !== document) {
+        if (node.classList && node.classList.contains(className)) return node;
+        node = node.parentNode;
+      }
+      return null;
+    }
+
+    function closestWithDataTab(node) {
+      while (node && node !== document) {
+        if (node.getAttribute && node.getAttribute('data-tab')) return node;
+        node = node.parentNode;
+      }
+      return null;
+    }
+
+    // =========================
+    // App registry (handlers)
+    // =========================
+    var handlers = {
+      renal: calculateRenal,
+      glucose: calculateGlucose,
+      lipid: calculateLipid,
+      liver: calculateLiver,
+      anemia: calculateAnemia,
+      uro: calculateUro,
+      dateCalc: calculateDateCalc,
+      gamma: calculateGamma
+    };
+
+    function runAll() {
+      // 依存関係があるタブ（年齢/性別など）もあるので全部回す
+      handlers.renal();
+      handlers.glucose();
+      handlers.lipid();
+      handlers.liver();
+      handlers.anemia();
+      handlers.uro();
+      handlers.dateCalc();
+      handlers.gamma();
+    }
+
+    // =========================
+    // Tabs (event delegation)
+    // =========================
+    var tabsRoot = document.querySelector('.tabs');
+    var tabButtons = document.querySelectorAll('.tab-button');
+    var tabContents = document.querySelectorAll('.tab-content');
+
+    function activateTab(tabId) {
+      for (var i = 0; i < tabButtons.length; i++) tabButtons[i].classList.remove('active');
+      for (var j = 0; j < tabContents.length; j++) tabContents[j].classList.remove('active');
+
+      // 対象buttonをactiveに
+      for (var k = 0; k < tabButtons.length; k++) {
+        if (tabButtons[k].getAttribute('data-tab') === tabId) {
+          tabButtons[k].classList.add('active');
+          break;
+        }
+      }
+      var target = $(tabId);
+      if (target) target.classList.add('active');
+    }
+
+    if (tabsRoot) {
+      tabsRoot.addEventListener('click', function (e) {
+        var btn = closestWithDataTab(e.target);
+        if (!btn) return;
+        var tabId = btn.getAttribute('data-tab');
+        if (!tabId) return;
+        activateTab(tabId);
+      });
+    }
+
+    // =========================
+    // Input listeners (delegation)
+    // =========================
+    // 1) 上段共通入力（年齢/性別/身長/体重）
+    (function bindCommonInputs() {
+      var commonIds = ['age', 'gender', 'height', 'weight'];
+      for (var i = 0; i < commonIds.length; i++) {
+        (function (id) {
+          var el = $(id);
+          if (!el) return;
+          var ev = (el.tagName === 'SELECT') ? 'change' : 'input';
+          el.addEventListener(ev, runAll);
+        })(commonIds[i]);
+      }
+    })();
+
+    // 2) 各セクション：input/changeをセクションDOM単位で拾う（個別登録を廃止）
+    function bindSection(sectionId, callback) {
+      var root = $(sectionId);
+      if (!root) return;
+
+      root.addEventListener('input', function (e) {
+        // input要素のみ反応
+        if (!e || !e.target) return;
+        var t = e.target;
+        if (t && t.tagName === 'INPUT') callback();
+      });
+
+      root.addEventListener('change', function (e) {
+        if (!e || !e.target) return;
+        var t = e.target;
+        if (!t) return;
+        // select / checkbox含め change で拾う
+        if (t.tagName === 'SELECT' || (t.tagName === 'INPUT' && t.type === 'checkbox')) callback();
+      });
+    }
+
+    bindSection('renal', handlers.renal);
+    bindSection('glucose', handlers.glucose);
+    bindSection('lipid', handlers.lipid);
+    bindSection('liver', handlers.liver);
+    bindSection('anemia', handlers.anemia);
+    bindSection('uro', handlers.uro);
+    bindSection('dateCalc', handlers.dateCalc);
+    bindSection('gamma', handlers.gamma);
+
+    // 薬剤ドロップダウン → 濃度フィールド自動入力
+    (function bindDrugSelect() {
+      var sel = $('g_drug_select');
+      if (!sel) return;
+      sel.addEventListener('change', function () {
+        var key = sel.value;
+        var info = key ? DRUG_INFO[key] : null;
+        var conc = info ? info.conc_mg_per_ml : null;
+        // ① カードの濃度フィールド
+        ['g_conc_a', 'g_conc_b'].forEach(function (id) {
+          var el = $(id);
+          if (!el) return;
+          if (conc !== null) {
+            el.value = conc;
+          } else {
+            el.value = '';
+          }
+        });
+        handlers.gamma(); // 即再計算
+      });
+    })();
+
+    // =========================
+    // Calculators
+    // =========================
+    function calculateRenal() {
+      var age = getNum('age');
+      var weight = getNum('weight');
+      var height = getNum('height');
+      var scr = getNum('scr');
+      var bun = getNum('bun');
+      var cys = getNum('cys');
+      var na = getNum('na');
+      var k = getNum('k');
+      var ua = getNum('ua');
+      var ucr = getNum('ucr');
+      var una = getNum('una');
+      var uk = getNum('uk');
+      var uua = getNum('uua');
+      var uun = getNum('uun');
+      var gender = getSelectValue('gender');
+
+      var messages = [];
+
+      // BSA (DuBois)
+      var bsa = (height && weight)
+        ? 0.007184 * Math.pow(height, 0.725) * Math.pow(weight, 0.425)
+        : null;
+
+      // eGFRcr
+      if (age && scr && gender) {
+        var sexFactor = (gender === 'female') ? 0.739 : 1;
+        var egfrcr = 194 * Math.pow(scr, -1.094) * Math.pow(age, -0.287) * sexFactor;
+
+        var gStage =
+          egfrcr >= 90 ? "G1: 正常または高値" :
+          egfrcr >= 60 ? "G2: 軽度低下" :
+          egfrcr >= 45 ? "G3a: 軽度〜中等度低下" :
+          egfrcr >= 30 ? "G3b: 中等度〜高度低下" :
+          egfrcr >= 15 ? "G4: 高度低下" :
+          "G5: 末期腎不全";
+
+        messages.push("標準化eGFRcr: " + egfrcr.toFixed(1) + " mL/min/1.73m² ⇒ " + gStage);
+
+        if (bsa) {
+          var egfrInd = egfrcr * (bsa / 1.73);
+          messages.push("個別化eGFRcr: " + egfrInd.toFixed(1) + " mL/min");
+        }
+
+        // Cockcroft–Gault eCCr
+        if (weight) {
+          var eccr = ((140 - age) * weight * ((gender === 'female') ? 0.85 : 1)) / (72 * scr);
+          messages.push("eCCr: " + eccr.toFixed(1) + " mL/min");
+
+          if (bsa) {
+            var eccrBsa = eccr * (1.73 / bsa);
+            messages.push("体表面積補正eCCr: " + eccrBsa.toFixed(1) + " mL/min/1.73m²");
+          }
+        }
+      }
+
+      // eGFRcys
+      if (age && cys && gender) {
+        var sexFactor2 = (gender === 'female') ? 0.82 : 1;
+        var egfrcys = 104 * Math.pow(cys / sexFactor2, -1.019) * Math.pow(age, -0.996);
+        messages.push("eGFRcys: " + egfrcys.toFixed(1) + " mL/min/1.73m²");
+
+        if (bsa) {
+          var egfrInd2 = egfrcys * (bsa / 1.73);
+          messages.push("個別化eGFRcys: " + egfrInd2.toFixed(1) + " mL/min");
+        }
+      }
+
+      // FEUN
+      if (bun && scr && ucr && uun) {
+        var feun = (uun * scr) / (bun * ucr) * 100;
+        messages.push("FEUN: " + feun.toFixed(2) + " %");
+        if (scr > 1.2) {
+          var noteFeun =
+            feun > 50 ? "尿素再吸収破綻、腎性：急性尿細管壊死" :
+            feun < 35 ? "抗利尿状態、腎前性を示唆" :
+            "";
+          if (noteFeun) messages.push("⇒ " + noteFeun);
+        }
+      }
+
+      // FENa
+      if (na && scr && ucr && una) {
+        var fena = (una * scr) / (na * ucr) * 100;
+        messages.push("FENa: " + fena.toFixed(2) + " %");
+        if (scr > 1.2) {
+          var noteFena =
+            fena > 2 ? "腎性：急性尿細管壊死" :
+            fena < 1 ? "腎前性を示唆" :
+            "";
+          if (noteFena) messages.push("⇒ " + noteFena);
+        }
+      }
+
+      // FEK
+      if (k && scr && ucr && uk) {
+        var fek = (uk * scr) / (k * ucr) * 100;
+        messages.push("FEK: " + fek.toFixed(2) + " %");
+      }
+
+      // FEUa
+      if (ua && scr && ucr && uua) {
+        var feua = (uua * scr) / (ua * ucr) * 100;
+        var noteFeua =
+          feua < 10 ? "尿酸排泄低下。あるいは腎前性" :
+          feua <= 15 ? "境界領域" :
+          "尿酸産生過剰型";
+        messages.push("FEUa: " + feua.toFixed(2) + " % ⇒ " + noteFeua);
+      }
+
+      // 尿中Na/K比
+      if (una && uk) {
+        var ratio = una / uk;
+        var status = ratio < 2 ? '理想的' : ratio < 4 ? '目標内' : '目標未達成';
+        messages.push("尿中Na/K比: " + ratio.toFixed(2) + "（" + status + "）");
+      }
+
+      // 田中法：Na摂取量（※式の前提確認は別途）
+      if (una && ucr) {
+        var naExcretion = 21.98 * Math.pow(una / ucr, 0.392);
+        var saltG = naExcretion * 58.5 / 1000;
+        messages.push("推定食塩摂取量: " + saltG.toFixed(1) + " g/day（田中法）");
+      }
+
+      // 田中法：K摂取量
+      if (uk && ucr) {
+        var kExcretion = 10.15 * Math.pow(uk / ucr, 0.517);
+        messages.push("推定K摂取量: " + kExcretion.toFixed(1) + " mEq/day（田中法）");
+      }
+
+      setMessages('renal-output', messages);
+    }
+
+    function calculateLiver() {
+      var weight = getNum('weight');
+      var height = getNum('height');
+      var ast = getNum('ast');
+      var alt = getNum('alt');
+      var plt = getNum('plt');
+      var tg = getNum('tg');
+      var ggt = getNum('ggt');
+      var gender = getSelectValue('gender');
+      var age = getNum('age');
+
+      var messages = [];
+
+      var bmi = (weight && height) ? weight / Math.pow(height / 100, 2) : null;
+      if (bmi) messages.push("BMI: " + bmi.toFixed(2));
+
+      if (ast && alt) {
+        var ratio = ast / alt;
+        if (ast > 38 || alt > 43) messages.push("AST/ALT比: " + ratio.toFixed(2));
+      }
+
+      if (age && ast && plt && alt) {
+        var fib4 = (age * ast) / ((plt * 10) * Math.sqrt(alt)); // plt(×10^4/μL) 想定
+        var note =
+          fib4 < 1.3 ? '線維化リスク低' :
+          fib4 < 2.67 ? '中等度の線維化リスク' :
+          '高度線維化リスク';
+        messages.push("Fib-4 index: " + fib4.toFixed(2) + " ⇒ " + note);
+      }
+
+      if (age && bmi && ast && alt && plt && gender) {
+        var sexFactor = (gender === 'male') ? 1 : 0;
+        var ratio2 = ast / alt;
+        var masld = 0.053 * age + 0.074 * bmi + 1.23 * ratio2 - 0.63 * plt - 1.32 * sexFactor;
+        var note2 =
+          masld < -1.455 ? '線維化低リスク､経過監察' :
+          masld <= 0.676 ? '線維化否定できず｡追加の非侵襲検査適応' :
+          '高度線維化の可能性が高く、肝生検の適応検討';
+        messages.push("MASLD Fibrosis Score: " + masld.toFixed(2) + " ⇒ " + note2);
+      }
+
+      if (bmi && tg && ggt && gender && tg > 0 && ggt > 0) {
+        var sexFactor2 = (gender === 'male') ? 1 : 0;
+        var logit = 0.953 * Math.log(tg) + 0.139 * bmi + 0.718 * Math.log(ggt) + 0.053 * sexFactor2 - 15.745;
+        var fli = 100 / (1 + Math.exp(-logit));
+        messages.push("Fatty Liver Index: " + fli.toFixed(1) + "（0〜100）");
+      }
+
+      setMessages('liver-output', messages);
+    }
+
+    function calculateUro() {
+      var longAxis = getNum('bladder_long');
+      var shortAxis = getNum('bladder_short');
+      var apAxis = getNum('bladder_ap');
+
+      var organValue = getSelectValue('organSelect') || 'prostate';
+      var messages = [];
+
+      if (longAxis && shortAxis && apAxis) {
+        var volume = longAxis * shortAxis * apAxis * 0.52;
+
+        if (organValue === "prostate") {
+          var note =
+            volume >= 50 ? "高度肥大で重症です｡" :
+            volume >= 20 ? "肥大ありで中等症です｡" :
+            "正常";
+          messages.push("前立腺容積：" + volume.toFixed(1) + " ⇒ " + note);
+        } else if (organValue === "bladder") {
+          var note2 =
+            volume >= 700 ? "高度拡張" :
+            volume >= 300 ? "拡張" :
+            "正常";
+          messages.push("膀胱容量推定: " + volume.toFixed(1) + " mL ⇒ " + note2);
+        } else if (organValue === "resualVol") {
+          var note3 =
+            volume >= 100 ? "過多：前立腺肥大があれば重症" :
+            volume >= 50 ? "境界域：前立腺肥大あれば中等症" :
+            "正常";
+          messages.push("残尿量推定: " + volume.toFixed(1) + " mL ⇒ " + note3);
+        }
+      }
+
+      setMessages('uro-output', messages);
+    }
+
+    function calculateGlucose() {
+      var cp = getNum('cp');
+      var glu = getNum('glu');
+      var ins = getNum('ins');
+
+      var messages = [];
+
+      if (cp && glu) {
+        var cpi = (cp * 100) / glu;
+        var note =
+          cpi >= 1.8 ? 'インスリン分泌能は十分に保たれています。' :
+          cpi >= 1.0 ? '中等度に保たれていますが、将来的な低下に注意が必要です。' :
+          cpi >= 0.8 ? 'やや低下しています。治療方針の見直しを検討してください。' :
+          '著しく低下しています。インスリン適応判断が必要です。';
+        messages.push("CPI（Cペプチドインデックス）: " + cpi.toFixed(2) + " ⇒ " + note);
+      }
+
+      if (ins && glu) {
+        var homa = (ins * glu) / 405;
+        var note2 =
+          homa < 1.6 ? 'インスリン抵抗性は認められません。' :
+          homa < 2.5 ? '軽度のインスリン抵抗性が疑われます｡' :
+          'インスリン抵抗性が明らかです。';
+        messages.push("HOMA-IR（インスリン抵抗性）: " + homa.toFixed(2) + " ⇒ " + note2);
+      }
+
+      setMessages('glucose-output', messages);
+    }
+
+function calculateLipid() {
+  var age = getNum('age');
+  var gender = getSelectValue('gender'); // 'male' | 'female'
+
+  // Lipids
+  var ldl = getNum('ldl');       // 実測LDL-C
+  var hdl = getNum('hdl');
+  var tc  = getNum('tc');
+  var tg  = getNum('tgLipid');
+
+  var nonHdl = (tc !== null && hdl !== null) ? (tc - hdl) : null;
+
+  // Friedewald LDL-C
+  var friedewaldLdl = null;
+  var friedewaldAvailable = false;
+  if (tc !== null && hdl !== null && tg !== null && tg < 400) {
+    friedewaldLdl = tc - hdl - (tg / 5);
+    friedewaldAvailable = true;
+  }
+
+  // 判定用LDL-C：実測優先、なければFriedewald
+  var judgeLdl = null;
+  var judgeLdlSource = '';
+  if (ldl !== null) {
+    judgeLdl = ldl;
+    judgeLdlSource = '実測LDL-C';
+  } else if (friedewaldAvailable) {
+    judgeLdl = friedewaldLdl;
+    judgeLdlSource = 'Friedewald式推算LDL-C';
+  }
+
+  // ASCVD / risk factors
+  var cadType = getSelectValue('cadType'); // '' | within1y | multiple | after1y | stable
+  var multiVessel = isChecked('multiVessel');
+  var atheroStroke = isChecked('atheroStroke');
+  var pad = isChecked('pad');
+
+  var dmStatus = getSelectValue('dmStatus'); // normal | igt | dm | dmComp
+  var ckdGrade = getSelectValue('ckdGrade'); // g1 | g3 | g4
+  var proteinuria = getSelectValue('proteinuria'); // a1 | a2 | a3
+  var htGrade = getSelectValue('htGrade'); // normal | elevated | stage1 | stage2 | stage3
+
+  var smoking = isChecked('smoking');
+  var familyHistory = isChecked('familyHistory');
+  var fh = isChecked('fh');
+
+  var messages = [];
+  var decidedBy = '';
+
+  function isDM() { return dmStatus === 'dm' || dmStatus === 'dmComp'; }
+  function isDMComp() { return dmStatus === 'dmComp'; }
+  function isIGT() { return dmStatus === 'igt'; }
+  function hasHTN() { return htGrade && htGrade !== 'normal'; }
+
+  function hasCAD() { return !!cadType; }
+  function hasACSAny() { return cadType === 'within1y' || cadType === 'multiple' || cadType === 'after1y'; }
+  function hasACSWithin1y() { return cadType === 'within1y'; }
+  function hasACSMultiple() { return cadType === 'multiple'; }
+  function isACSAfter1yOrStable() { return cadType === 'after1y' || cadType === 'stable'; }
+
+  function hasExtremeFactorForCAD() {
+    return !!(fh || isDMComp() || pad || atheroStroke);
+  }
+
+  function hasAnyCKDRisk() {
+    return (ckdGrade === 'g3' || ckdGrade === 'g4' || (ckdGrade === 'g1' && (proteinuria === 'a2' || proteinuria === 'a3')));
+  }
+
+  function hisayamaRisk() {
+    // 判定用LDLを使用
+    if (!age || !gender || judgeLdl === null || hdl === null) {
+      return { ok:false, reason:'久山町計算に年齢/性別/LDL/HDLが必要' };
+    }
+
+    var pts = (gender === 'male') ? 7 : 0;
+
+    var sbpPts =
+      htGrade === 'normal'   ? 0 :
+      htGrade === 'elevated' ? 1 :
+      htGrade === 'stage1'   ? 2 :
+      htGrade === 'stage2'   ? 3 :
+      htGrade === 'stage3'   ? 4 : 0;
+    pts += sbpPts;
+
+    if (isIGT()) pts += 1;
+
+    var ldlPts = (judgeLdl < 120) ? 0 : (judgeLdl < 140) ? 1 : (judgeLdl < 160) ? 2 : 3;
+    pts += ldlPts;
+
+    var hdlPts = (hdl >= 60) ? 0 : (hdl >= 40) ? 1 : 2;
+    pts += hdlPts;
+
+    pts += smoking ? 2 : 0;
+
+    var band = null;
+    if (age >= 40 && age <= 49) band = '40-49';
+    else if (age >= 50 && age <= 59) band = '50-59';
+    else if (age >= 60 && age <= 69) band = '60-69';
+    else if (age >= 70 && age <= 79) band = '70-79';
+    else return { ok:false, reason:'久山町の年齢範囲は40-79歳（入力: ' + age + '）' };
+
+    var risk = null;
+    if (band === '40-49') {
+      risk = (pts <= 12) ? 'low' : 'middle';
+    } else if (band === '50-59') {
+      risk = (pts <= 7) ? 'low' : (pts <= 18) ? 'middle' : 'high';
+    } else if (band === '60-69') {
+      risk = (pts <= 1) ? 'low' : (pts <= 12) ? 'middle' : 'high';
+    } else if (band === '70-79') {
+      risk = (pts <= 7) ? 'middle' : 'high';
+    }
+
+    return { ok:true, points:pts, band:band, risk:risk };
+  }
+
+  var targetLDL = null;
+  var categoryLabel = '';
+
+  // 55 mg/dL未満（極高リスク）
+  if (hasACSWithin1y()) {
+    targetLDL = 55;
+    categoryLabel = '極高リスク（55）';
+    decidedBy = 'ACS発症1年以内';
+  } else if (hasACSMultiple()) {
+    targetLDL = 55;
+    categoryLabel = '極高リスク（55）';
+    decidedBy = '2回以上のACS既往';
+  } else if (hasACSAny() && multiVessel) {
+    targetLDL = 55;
+    categoryLabel = '極高リスク（55）';
+    decidedBy = 'ACS既往 + 多枝病変';
+  } else if (isACSAfter1yOrStable() && hasExtremeFactorForCAD()) {
+    targetLDL = 55;
+    categoryLabel = '極高リスク（55）';
+    var factors = [];
+    if (fh) factors.push('FH');
+    if (isDMComp()) factors.push('DM細小血管障害');
+    if (pad) factors.push('PAD');
+    if (atheroStroke) factors.push('アテローム血栓性脳梗塞');
+    decidedBy = (cadType === 'after1y' ? 'ACS1年後以降' : '安定CAD') + ' + ' + factors.join(' / ');
+  }
+
+  // 70 mg/dL未満（二次予防）
+  if (targetLDL === null) {
+    if (isACSAfter1yOrStable() && !hasExtremeFactorForCAD()) {
+      targetLDL = 70;
+      categoryLabel = '二次予防（70）';
+      decidedBy = (cadType === 'after1y' ? 'ACS1年後以降' : '安定CAD') + '（極高リスク因子なし）';
+    } else if (!hasCAD() && (atheroStroke || pad)) {
+      targetLDL = 70;
+      categoryLabel = '二次予防（70）';
+      decidedBy = 'CADなし + ' + (atheroStroke ? 'アテローム血栓性脳梗塞' : 'PAD');
+    }
+  }
+
+  // 一次予防
+  if (targetLDL === null) {
+    var fhRiskFactor = (
+      isDM() ||
+      hasAnyCKDRisk() ||
+      hasHTN() ||
+      smoking ||
+      familyHistory
+    );
+
+    var primaryHigh70 =
+      (fh && fhRiskFactor) ||
+      (isDM() && (isDMComp() || smoking)) ||
+      ((ckdGrade === 'g3' || ckdGrade === 'g4') && (proteinuria === 'a2' || proteinuria === 'a3')) ||
+      (ckdGrade === 'g1' && proteinuria === 'a3');
+
+    if (primaryHigh70) {
+      targetLDL = 70;
+      categoryLabel = '一次予防 高リスク（70）';
+
+      if (fh && fhRiskFactor) {
+        decidedBy = 'FH + リスク因子あり';
+      } else if (isDM() && (isDMComp() || smoking)) {
+        decidedBy = '糖尿病 +（細小血管障害 or 喫煙）';
+      } else if ((ckdGrade === 'g3' || ckdGrade === 'g4') && (proteinuria === 'a2' || proteinuria === 'a3')) {
+        decidedBy = 'CKD G3-5 + 蛋白尿A2/A3';
+      } else {
+        decidedBy = 'CKD G1-2 + 蛋白尿A3';
+      }
+    } else {
+      var hy = hisayamaRisk();
+
+      var primaryMidHigh100 =
+        (fh && !fhRiskFactor) ||
+        (dmStatus === 'dm') ||
+        ((ckdGrade === 'g3' || ckdGrade === 'g4') && proteinuria === 'a1') ||
+        (ckdGrade === 'g1' && proteinuria === 'a2') ||
+        (hy.ok && hy.risk === 'high');
+
+      if (primaryMidHigh100) {
+        targetLDL = 100;
+        categoryLabel = '一次予防 中高リスク（100）';
+
+        if (fh && !fhRiskFactor) {
+          decidedBy = 'FH（リスク因子なし）';
+        } else if (dmStatus === 'dm') {
+          decidedBy = '糖尿病（合併症なし）';
+        } else if ((ckdGrade === 'g3' || ckdGrade === 'g4') && proteinuria === 'a1') {
+          decidedBy = 'CKD G3-5 + 蛋白尿A1';
+        } else if (ckdGrade === 'g1' && proteinuria === 'a2') {
+          decidedBy = 'CKD G1-2 + 蛋白尿A2';
+        } else {
+          decidedBy = '久山町 高リスク: ' + hy.points + '点';
+        }
+      } else if (hy.ok && hy.risk === 'middle') {
+        targetLDL = 120;
+        categoryLabel = '一次予防 中リスク（120）';
+        decidedBy = '久山町 中リスク: ' + hy.points + '点';
+      } else if (hy.ok && hy.risk === 'low') {
+        targetLDL = 140;
+        categoryLabel = '一次予防 低リスク（140）';
+        decidedBy = '久山町 低リスク: ' + hy.points + '点';
+      } else {
+        targetLDL = null;
+        categoryLabel = '';
+        decidedBy = hy.reason || '一次予防リスク判定不能';
+      }
+    }
+  }
+
+  // ===== 表示 =====
+  if (ldl !== null) {
+    messages.push('LDL-C（実測）: ' + ldl.toFixed(0) + ' mg/dL');
+  } else {
+    messages.push('LDL-C（実測）: 未入力');
+  }
+
+  if (hdl !== null) messages.push('HDL-C: ' + hdl.toFixed(0) + ' mg/dL');
+  if (tc !== null) messages.push('総コレステロール: ' + tc.toFixed(0) + ' mg/dL');
+  if (tg !== null) messages.push('中性脂肪: ' + tg.toFixed(0) + ' mg/dL');
+  if (nonHdl !== null) messages.push('Non-HDL-C（TC−HDL）: ' + nonHdl.toFixed(0) + ' mg/dL');
+
+  if (tc !== null && hdl !== null && tg !== null) {
+    if (tg < 400) {
+      messages.push('Friedewald式推算LDL-C: ' + friedewaldLdl.toFixed(0) + ' mg/dL');
+    } else {
+      messages.push('Friedewald式推算LDL-C: TG 400 mg/dL以上のため計算対象外');
+    }
+  }
+
+  if (judgeLdl !== null) {
+    messages.push('判定に使用したLDL-C: ' + judgeLdl.toFixed(0) + ' mg/dL（' + judgeLdlSource + '）');
+  } else {
+    messages.push('判定に使用したLDL-C: 未確定');
+  }
+
+  if (targetLDL === null) {
+    messages.push('<b>目標値が確定できない</b>（' + decidedBy + '）');
+    setMessages('lipid-output', messages);
+    return;
+  }
+
+  var targetNonHDL = targetLDL + 30;
+
+  var ldlAchieved = (judgeLdl !== null) ? (judgeLdl < targetLDL) : null;
+  var nonHdlAchieved = (nonHdl !== null) ? (nonHdl < targetNonHDL) : null;
+
+  messages.push('---');
+  messages.push('カテゴリ: <b>' + categoryLabel + '</b>');
+  messages.push('LDL-C目標: <b>' + targetLDL + ' mg/dL 未満</b> → ' + (ldlAchieved === null ? '（LDL未確定）' : (ldlAchieved ? '<b>達成</b>' : '<b>未達成</b>')));
+  messages.push('Non-HDL-C目標: <b>' + targetNonHDL + ' mg/dL 未満</b> → ' + (nonHdlAchieved === null ? '（TC/HDLが必要）' : (nonHdlAchieved ? '<b>達成</b>' : '<b>未達成</b>')));
+  messages.push('判定経路: ' + decidedBy);
+
+  setMessages('lipid-output', messages);
+}
+
+      function calculateAnemia() {
+      var hb = getNum('hb');
+      var hct = getNum('hct');
+      var rbc = getNum('rbc'); // 万/mm3
+      var mcvInput = getNum('mcv');
+      var retic = getNum('retic'); // ‰
+      var ferritin = getNum('ferritin');
+      var tibc = getNum('tibc');
+      var uibc = getNum('uibc');
+      var serumIron = getNum('serumIron');
+      var tsatInput = getNum('tsat');
+      var epo = getNum('epo');
+      var gfrStage = getSelectValue('gfrAnemia');   // g1g2 / g3a / g3b / g4g5 / dialysis
+      var esaTherapy = getSelectValue('esaTherapy'); // yes / no
+
+      var messages = [];
+
+      // UIBC + Fe から TIBC 補完
+      if (tibc === null && uibc !== null && serumIron !== null) {
+        tibc = uibc + serumIron;
+      }
+
+      // MCV計算
+      // RBCは 万/mm3 = 万/μL として扱う
+      // MCV(fL) = Hct(%) * 10 / RBC(10^6/μL)
+      // RBC(10^6/μL) = rbc / 100
+      // よって MCV = Hct * 1000 / rbc
+      var mcvCalc = null;
+      if (hct !== null && rbc !== null && rbc > 0) {
+        mcvCalc = (hct * 1000) / rbc;
+      }
+
+      var mcvUsed = null;
+      var mcvSource = '';
+      if (mcvInput !== null) {
+        mcvUsed = mcvInput;
+        mcvSource = '入力値';
+      } else if (mcvCalc !== null) {
+        mcvUsed = mcvCalc;
+        mcvSource = '自動算出';
+      }
+
+      // TSAT計算
+      var tsatCalc = null;
+      if (tibc !== null && serumIron !== null && tibc > 0) {
+        tsatCalc = (serumIron / tibc) * 100;
+      }
+
+      var tsatUsed = null;
+      var tsatSource = '';
+      if (tsatInput !== null) {
+        tsatUsed = tsatInput;
+        tsatSource = '入力値';
+      } else if (tsatCalc !== null) {
+        tsatUsed = tsatCalc;
+        tsatSource = '自動算出';
+      }
+
+      // 網状球絶対数
+      // RBC = rbc * 10000 /μL
+      // Retic fraction = retic / 1000
+      // Absolute retic = rbc * 10000 * retic / 1000 = rbc * retic * 10
+      var reticAbs = null;
+      if (rbc !== null && retic !== null) {
+        reticAbs = rbc * retic * 10; // /μL
+      }
+
+      // RPI
+      // Retic(‰) → %
+      var rpi = null;
+      if (retic !== null && hct !== null) {
+        var reticPercent = retic / 10;
+        var maturation = 1.0;
+
+        if (hct >= 36) {
+          maturation = 1.0;
+        } else if (hct >= 26) {
+          maturation = 1.5;
+        } else if (hct >= 16) {
+          maturation = 2.0;
+        } else {
+          maturation = 2.5;
+        }
+
+        rpi = (reticPercent * (hct / 45)) / maturation;
+      }
+
+      function getGfrLabel(val) {
+        if (val === 'g1g2') return 'G1,G2：60以上';
+        if (val === 'g3a') return 'G3a：45～59';
+        if (val === 'g3b') return 'G3b：30～44';
+        if (val === 'g4g5') return 'G4,G5：30未満';
+        if (val === 'dialysis') return '透析中';
+        return '';
+      }
+
+      function getEsaLabel(val) {
+        if (val === 'yes') return 'あり';
+        if (val === 'no') return 'なし';
+        return '';
+      }
+
+      // 1行サマリー判定
+      var ironSummary = '';
+      var epoSummary = '';
+      var reticSummary = '';
+
+      // 鉄判定
+      if (ferritin !== null || tsatUsed !== null) {
+        if (esaTherapy === 'yes' && gfrStage === 'dialysis') {
+          if (ferritin !== null) {
+            if (ferritin > 500) {
+              ironSummary = '鉄過剰あり';
+            } else if (ferritin >= 300) {
+              ironSummary = '鉄過剰なし';
+            } else if (ferritin >= 100) {
+              ironSummary = '鉄欠乏なし・鉄過剰なし';
+            } else if (tsatUsed !== null && tsatUsed < 20) {
+              ironSummary = '鉄欠乏あり';
+            } else {
+              ironSummary = '鉄欠乏なし・鉄過剰なし';
+            }
+          }
+        } else if (esaTherapy === 'yes' && gfrStage && gfrStage !== 'dialysis') {
+          if (ferritin !== null) {
+            if (ferritin > 300) {
+              ironSummary = '鉄過剰あり';
+            } else if (ferritin >= 100) {
+              ironSummary = '鉄過剰なし';
+            } else if (ferritin >= 50) {
+              ironSummary = '鉄欠乏なし・鉄過剰なし';
+            } else if (tsatUsed !== null && tsatUsed < 20) {
+              ironSummary = '鉄欠乏あり';
+            } else {
+              ironSummary = '鉄欠乏なし・鉄過剰なし';
+            }
+          }
+        } else {
+          if (ferritin !== null && tsatUsed !== null) {
+            if (ferritin < 30 && tsatUsed < 20) {
+              ironSummary = '鉄欠乏あり';
+            } else {
+              ironSummary = '鉄欠乏なし・鉄過剰なし';
+            }
+          } else if (ferritin !== null) {
+            ironSummary = '鉄欠乏/鉄過剰は判定保留';
+          } else if (tsatUsed !== null) {
+            ironSummary = '鉄欠乏/鉄過剰は判定保留';
+          }
+        }
+      }
+
+      // EPO判定
+      if (hb !== null && epo !== null) {
+        if (hb >= 10 && hb <= 11) {
+          if (epo < 20) {
+            epoSummary = 'エリスロポエチン低反応';
+          } else {
+            epoSummary = 'エリスロポエチン正常反応';
+          }
+        } else if (hb >= 8 && hb < 10) {
+          if (epo < 30) {
+            epoSummary = 'エリスロポエチン低反応';
+          } else {
+            epoSummary = 'エリスロポエチン正常反応';
+          }
+        } else if (hb < 8) {
+          if (epo < 80) {
+            epoSummary = 'エリスロポエチン低反応';
+          } else {
+            epoSummary = 'エリスロポエチン正常反応';
+          }
+        }
+      }
+
+      // 網状赤血球判定
+      // RPI < 2 低反応
+      // 2～3 正常反応
+      // >3 亢進
+      if (rpi !== null) {
+        if (rpi < 2) {
+          reticSummary = '網状赤血球低反応';
+        } else if (rpi > 3) {
+          reticSummary = '網状赤血球亢進';
+        } else {
+          reticSummary = '網状赤血球正常反応';
+        }
+      }
+
+      // 入力値表示
+      if (hb !== null) messages.push('Hb: ' + hb.toFixed(1) + ' g/dL');
+      if (hct !== null) messages.push('Ht: ' + hct.toFixed(1) + ' %');
+      if (rbc !== null) messages.push('RBC: ' + rbc.toFixed(1) + ' 万/mm3');
+      if (mcvCalc !== null) messages.push('MCV（自動算出）: ' + mcvCalc.toFixed(1) + ' fL');
+      if (mcvUsed !== null) messages.push('MCV（判定使用）: ' + mcvUsed.toFixed(1) + ' fL（' + mcvSource + '）');
+
+      if (serumIron !== null) messages.push('血清鉄: ' + serumIron.toFixed(0) + ' μg/dL');
+      if (uibc !== null) messages.push('UIBC: ' + uibc.toFixed(0) + ' μg/dL');
+      if (tibc !== null) messages.push('TIBC: ' + tibc.toFixed(0) + ' μg/dL');
+      if (tsatUsed !== null) messages.push('鉄飽和率: ' + tsatUsed.toFixed(1) + ' %（' + tsatSource + '）');
+      if (ferritin !== null) messages.push('フェリチン: ' + ferritin.toFixed(1) + ' ng/mL');
+      if (epo !== null) messages.push('EPO: ' + epo.toFixed(1) + ' mIU/mL');
+      if (gfrStage) messages.push('GFR区分: ' + getGfrLabel(gfrStage));
+      if (esaTherapy) messages.push('ESA製剤 / HIF-PH阻害剤投与中: ' + getEsaLabel(esaTherapy));
+      if (retic !== null) messages.push('網状球: ' + retic.toFixed(1) + ' ‰');
+      if (reticAbs !== null) messages.push('網状球絶対数: ' + reticAbs.toFixed(0) + ' /μL');
+      if (rpi !== null) messages.push('RPI: ' + rpi.toFixed(2));
+
+      // 1行サマリー
+      if (ironSummary || epoSummary || reticSummary) {
+        messages.push('---');
+        if (ironSummary) messages.push('<b>鉄評価:</b> ' + ironSummary);
+        if (epoSummary) messages.push('<b>EPO反応:</b> ' + epoSummary);
+        if (reticSummary) messages.push('<b>網状赤血球反応:</b> ' + reticSummary);
+      }
+
+      // MCV分類
+      if (mcvUsed !== null) {
+        messages.push('---');
+
+        if (mcvUsed < 80) {
+          messages.push('<b>小球性貧血</b>');
+        } else if (mcvUsed > 100) {
+          messages.push('<b>大球性貧血</b>');
+          messages.push('⇒ B12欠乏、葉酸欠乏、MDS、肝障害、甲状腺機能低下、溶血後などを鑑別');
+        } else {
+          messages.push('<b>正球性貧血</b>');
+          messages.push('⇒ 腎性貧血、炎症性貧血、急性出血、溶血、骨髄不全などを鑑別');
+        }
+      }
+
+      // 詳細鉄評価
+      if (ferritin !== null || tsatUsed !== null) {
+        messages.push('---');
+
+        if (esaTherapy === 'no') {
+          if (ferritin !== null && tsatUsed !== null && ferritin < 30 && tsatUsed < 20) {
+            messages.push('鉄欠乏を示唆');
+          }
+        }
+
+        if (esaTherapy === 'yes' && gfrStage === 'dialysis') {
+          if (ferritin !== null) {
+            if (ferritin > 500) {
+              messages.push('鉄過剰を示唆');
+            } else if (ferritin >= 300) {
+              messages.push('フェリチンの目標値を超過している');
+            } else if (ferritin >= 100) {
+              messages.push('フェリチンは目標範囲内');
+            } else if (tsatUsed !== null && tsatUsed < 20) {
+              messages.push('鉄欠乏示唆');
+            }
+          }
+        }
+
+        if (esaTherapy === 'yes' && gfrStage && gfrStage !== 'dialysis') {
+          if (ferritin !== null) {
+            if (ferritin > 300) {
+              messages.push('鉄過剰を示唆');
+            } else if (ferritin >= 100) {
+              messages.push('フェリチンの目標値を超過');
+            } else if (ferritin >= 50) {
+              messages.push('フェリチンは目標範囲内');
+            } else if (tsatUsed !== null && tsatUsed < 20) {
+              messages.push('鉄欠乏示唆');
+            }
+          }
+        }
+
+        if (!esaTherapy && ferritin !== null && tsatUsed !== null) {
+          if (ferritin < 30 && tsatUsed < 20) {
+            messages.push('鉄欠乏を示唆');
+          }
+        }
+      }
+
+      // EPO詳細
+      if (hb !== null && epo !== null) {
+        messages.push('---');
+
+        if (hb >= 10 && hb <= 11) {
+          if (epo < 20) {
+            messages.push('EPOは相対的低値を示唆（Hb 10～11 に対して低反応）');
+          } else if (epo <= 30) {
+            messages.push('EPOは境界域（Hb 10～11 に対して）');
+          } else {
+            messages.push('EPOは適切反応（Hb 10～11 に対して）');
+          }
+        } else if (hb >= 8 && hb < 10) {
+          if (epo < 30) {
+            messages.push('EPOは相対的低値を示唆（Hb 8～10 に対して低反応）');
+          } else if (epo <= 100) {
+            messages.push('EPOは境界域（Hb 8～10 に対して）');
+          } else {
+            messages.push('EPOは適切反応（Hb 8～10 に対して）');
+          }
+        } else if (hb < 8) {
+          if (epo < 80) {
+            messages.push('EPOは相対的低値を示唆（Hb 8未満 に対して低反応）');
+          } else if (epo <= 300) {
+            messages.push('EPOは境界域（Hb 8未満 に対して）');
+          } else {
+            messages.push('EPOは適切反応（Hb 8未満 に対して）');
+          }
+        }
+      }
+
+      // 腎性貧血の補助コメント
+      if (gfrStage === 'g3a' || gfrStage === 'g3b' || gfrStage === 'g4g5' || gfrStage === 'dialysis') {
+        messages.push('GFR低下あり。腎性貧血の関与を考慮');
+      }
+
+      // RPI判定
+      if (rpi !== null) {
+        messages.push('---');
+        if (rpi > 3) {
+          messages.push('<b>RPI > 3</b>：網状赤血球反応亢進');
+          messages.push('⇒ 出血性貧血、溶血性貧血をより強く鑑別');
+        } else if (rpi >= 2) {
+          messages.push('<b>RPI 2～3</b>：網状赤血球反応は概ね保たれる');
+        } else {
+          messages.push('<b>RPI < 2</b>：骨髄反応不十分');
+          messages.push('⇒ 造血不良を示唆');
+        }
+      }
+
+      // 補足
+      if (mcvInput !== null && mcvCalc !== null) {
+        var diff = Math.abs(mcvInput - mcvCalc);
+        if (diff >= 3) {
+          messages.push('---');
+          messages.push('入力MCVと自動算出MCVに差あり（' + diff.toFixed(1) + ' fL）。検査値の単位・転記を再確認');
+        }
+      }
+
+      setMessages('anemia-output', messages);
+    }
+    // ---------- Date Calc（日＋週のみ / 終日含むなし） ----------
+    function calculateDateCalc() {
+      var base = $('baseDate') ? $('baseDate').value : '';
+      var dateA = $('dateA') ? $('dateA').value : '';
+      var dateB = $('dateB') ? $('dateB').value : '';
+
+      var daysOffset = getNum('daysOffset');
+      var weeksOffset = getNum('weeksOffset');
+      if (daysOffset === null) daysOffset = 0;
+      if (weeksOffset === null) weeksOffset = 0;
+
+      var messages = [];
+
+      if (base) {
+        var baseDate = parseDateLocal(base);
+        var totalDays = daysOffset + weeksOffset * 7;
+        var result = addDays(baseDate, totalDays);
+
+        messages.push('基準日: ' + fmtYMD(baseDate) + '（' + weekdayJP(baseDate) + '）');
+        messages.push('加算: 日 ' + daysOffset + ' / 週 ' + weeksOffset + '（合計 ' + totalDays + ' 日）');
+        messages.push('結果日: <b>' + fmtYMD(result) + '（' + weekdayJP(result) + '）</b>');
+      } else {
+        messages.push('基準日を入力すると、加算結果を表示します。');
+      }
+
+      if (dateA && dateB) {
+        var a = parseDateLocal(dateA);
+        var b = parseDateLocal(dateB);
+        var diff = diffDays(a, b);
+
+        var sign = diff >= 0 ? '' : '−';
+        messages.push('---');
+        messages.push('日付A: ' + fmtYMD(a) + '（' + weekdayJP(a) + '）');
+        messages.push('日付B: ' + fmtYMD(b) + '（' + weekdayJP(b) + '）');
+        messages.push('差（A→B）: <b>' + sign + Math.abs(diff) + ' 日</b>');
+      }
+
+      setMessages('dateCalc-output', messages);
+    }
+
+    // ---------- γ計算 ----------
+    var DRUG_INFO = {
+      DOA: {
+        label: 'DOA（ドパミン）',
+        unit: 'γ（μg/kg/min）',
+        conc_mg_per_ml: 3,          // 150mg/50mL = 3mg/mL
+        conc_label: '150mg/50mL（0.3%シリンジ）= 3 mg/mL',
+        ranges: [
+          { label: '低用量（腎血流域）',   min: 1,   max: 3,   note: '腎・腸管血流増加' },
+          { label: '中用量（強心域）',    min: 3,   max: 10,  note: '心収縮力・心拍出量↑' },
+          { label: '高用量（血管収縮域）', min: 10,  max: 20,  note: 'α作用優位、末梢血管収縮' }
+        ]
+      },
+      DOB: {
+        label: 'DOB（ドブタミン）',
+        unit: 'γ（μg/kg/min）',
+        conc_mg_per_ml: 3,          // 150mg/50mL = 3mg/mL
+        conc_label: '150mg/50mL（0.3%シリンジ）= 3 mg/mL',
+        ranges: [
+          { label: '標準域', min: 2,  max: 10, note: 'β1刺激、心収縮力↑' },
+          { label: '高用量', min: 10, max: 20, note: '頻脈・不整脈に注意' }
+        ]
+      },
+      NAD: {
+        label: 'NAD（ノルアドレナリン）',
+        unit: 'γ（μg/kg/min）',
+        conc_mg_per_ml: 0.06,       // 3mg/50mL = 0.06mg/mL
+        conc_label: '3mg/50mL = 0.06 mg/mL',
+        ranges: [
+          { label: '低用量', min: 0.01, max: 0.1, note: '血圧維持（敗血症性ショックの第1選択）' },
+          { label: '高用量', min: 0.1,  max: 1.0, note: '強い血管収縮、虚血に注意' }
+        ]
+      },
+      hANP: {
+        label: 'hANP（カルペリチド）',
+        unit: 'γ（μg/kg/min）',
+        conc_mg_per_ml: 0.06,       // 3mg/50mL = 0.06mg/mL
+        conc_label: '3mg/50mL = 0.06 mg/mL',
+        ranges: [
+          { label: '標準投与', min: 0.0125, max: 0.025, note: '急性心不全。0.025γ固定も多い' }
+        ]
+      },
+      Landiolol: {
+        label: 'オノアクト（ランジオロール）',
+        unit: 'γ（μg/kg/min）',
+        conc_mg_per_ml: 1,          // 50mg/50mL = 1mg/mL
+        conc_label: '50mg/50mL = 1 mg/mL',
+        ranges: [
+          { label: '維持投与', min: 1,  max: 10, note: '心房細動・AFL のレートコントロール' },
+          { label: '負荷投与', min: 10, max: 40, note: '短時間の急速投与（1～2分）後に維持へ' }
+        ]
+      },
+      Nifedipine: {
+        label: 'ニフェジピン（コアテック）',
+        unit: 'γ（μg/kg/min）',
+        conc_mg_per_ml: 1,          // 50mg/50mL = 1mg/mL
+        conc_label: '50mg/50mL = 1 mg/mL',
+        ranges: [
+          { label: '標準域', min: 0.3, max: 0.5, note: '高血圧緊急症。0.5γを超えないこと' },
+          { label: '最大',   min: 0.5, max: 0.5, note: '上限。急激な血圧低下に注意' }
+        ]
+      }
+    };
+
+    function calculateGamma() {
+      // 共通フォームの体重を優先、各カード内のフィールドにも反映
+      var commonWeight = getNum('weight');
+
+      // カード①・②内の体重フィールドに共通値を同期（空欄の場合のみ）
+      ['g_weight_a', 'g_weight_b'].forEach(function(id) {
+        var el = $(id);
+        if (el && el.value === '' && commonWeight !== null) {
+          el.placeholder = String(commonWeight) + ' kg（共通フォームより）';
+        } else if (el && el.value === '' && commonWeight === null) {
+          el.placeholder = '共通フォームから自動';
+        }
+      });
+
+      // ── ① 現在のγ計算 ──
+      var concA   = getNum('g_conc_a');
+      var rateA   = getNum('g_rate_a');
+      var weightA = getNum('g_weight_a');
+      if (weightA === null) weightA = commonWeight;
+
+      var msgsA = [];
+      if (concA !== null && rateA !== null && weightA !== null && weightA > 0) {
+        // γ(μg/kg/min) = 濃度(mg/mL) × 速度(mL/h) × 1000 / 60 / 体重(kg)
+        var gammaVal = (concA * rateA * 1000) / (60 * weightA);
+        msgsA.push('<span class="result-highlight">' + gammaVal.toFixed(3) + ' γ</span>');
+        msgsA.push('<span class="result-note">（μg/kg/min）</span>');
+        msgsA.push('体重 ' + weightA.toFixed(1) + ' kg　|　濃度 ' + concA + ' mg/mL　|　速度 ' + rateA + ' mL/h');
+
+        // 選択薬剤との照合
+        var selDrug = getSelectValue('g_drug_select');
+        if (selDrug && DRUG_INFO[selDrug]) {
+          var info = DRUG_INFO[selDrug];
+          var inRange = false;
+          var rangeNote = '';
+          info.ranges.forEach(function(r) {
+            if (gammaVal >= r.min && gammaVal <= r.max) {
+              inRange = true;
+              rangeNote = r.label + '：' + r.note;
+            }
+          });
+          if (inRange) {
+            msgsA.push('<b class="ok">✔ ' + info.label + ' ' + rangeNote + '</b>');
+          } else {
+            var allMin = info.ranges[0].min;
+            var allMax = info.ranges[info.ranges.length - 1].max;
+            if (gammaVal < allMin) {
+              msgsA.push('<b class="warn">▼ ' + info.label + ' 推奨範囲（' + allMin + '～' + allMax + ' γ）を下回っています</b>');
+            } else {
+              msgsA.push('<b class="warn">▲ ' + info.label + ' 推奨範囲（' + allMin + '～' + allMax + ' γ）を超えています</b>');
+            }
+          }
+        }
+      } else {
+        msgsA.push('薬剤濃度・投与速度・体重を入力してください。');
+      }
+      setMessages('gamma-output-a', msgsA);
+
+      // ── ② 目標γから速度計算 ──
+      var targetG  = getNum('g_target_gamma');
+      var concB    = getNum('g_conc_b');
+      var weightB  = getNum('g_weight_b');
+      if (weightB === null) weightB = commonWeight;
+
+      var msgsB = [];
+      if (targetG !== null && concB !== null && weightB !== null && weightB > 0 && concB > 0) {
+        // 速度(mL/h) = γ × 体重 × 60 / (濃度 × 1000)
+        var rateResult = (targetG * weightB * 60) / (concB * 1000);
+        msgsB.push('<span class="result-highlight">' + rateResult.toFixed(2) + ' mL/h</span>');
+        msgsB.push('<span class="result-note">（投与速度）</span>');
+        msgsB.push('目標 ' + targetG + ' γ　|　体重 ' + weightB.toFixed(1) + ' kg　|　濃度 ' + concB + ' mg/mL');
+      } else {
+        msgsB.push('目標γ・薬剤濃度・体重を入力してください。');
+      }
+      setMessages('gamma-output-b', msgsB);
+
+      // ── ③ 薬剤リファレンス ──
+      var selDrug2 = getSelectValue('g_drug_select');
+      var msgsDrug = [];
+      var chipsHtml = '';
+
+      // 全薬剤チップを描画
+      Object.keys(DRUG_INFO).forEach(function(key) {
+        var d = DRUG_INFO[key];
+        var rangeStr = d.ranges.map(function(r) {
+          return r.label + '：' + r.min + (r.min === r.max ? '' : '～' + r.max) + ' γ';
+        }).join('<br>');
+        var concStr = d.conc_label ? '<span style="color:#888;font-size:11px;">💊 ' + d.conc_label + '</span><br>' : '';
+        var selectedClass = (key === selDrug2) ? ' selected-drug' : '';
+        chipsHtml += '<div class="drug-chip' + selectedClass + '">';
+        chipsHtml += '<span class="drug-name">' + d.label + '</span>';
+        chipsHtml += concStr;
+        chipsHtml += '<span class="drug-range">' + rangeStr + '</span>';
+        chipsHtml += '</div>';
+      });
+
+      var chipsEl = $('gamma-drug-chips');
+      if (chipsEl) chipsEl.innerHTML = chipsHtml;
+
+      if (selDrug2 && DRUG_INFO[selDrug2]) {
+        var info2 = DRUG_INFO[selDrug2];
+        msgsDrug.push('<b>' + info2.label + '</b>');
+        if (info2.conc_label) {
+          msgsDrug.push('💊 当院採用濃度：<b>' + info2.conc_label + '</b>　→ 濃度フィールドに自動入力しました');
+        }
+        info2.ranges.forEach(function(r) {
+          msgsDrug.push(
+            r.label + '：<b>' + r.min + (r.min === r.max ? '' : '～' + r.max) + ' γ</b>　' + r.note
+          );
+        });
+      } else {
+        msgsDrug.push('薬剤を選択すると詳細が表示されます。');
+      }
+      setMessages('gamma-output-drug', msgsDrug);
+    }
+
+    // 日付ユーティリティ
+    function parseDateLocal(yyyy_mm_dd) {
+      var parts = yyyy_mm_dd.split('-');
+      var y = Number(parts[0]);
+      var m = Number(parts[1]);
+      var d = Number(parts[2]);
+      return new Date(y, m - 1, d, 12, 0, 0, 0); // 正午固定
+    }
+
+    function fmtYMD(date) {
+      var y = date.getFullYear();
+      var m = String(date.getMonth() + 1);
+      if (m.length < 2) m = '0' + m;
+      var d = String(date.getDate());
+      if (d.length < 2) d = '0' + d;
+      return y + '-' + m + '-' + d;
+    }
+
+    function weekdayJP(date) {
+      return ['日','月','火','水','木','金','土'][date.getDay()];
+    }
+
+    function addDays(date, days) {
+      var d = new Date(date.getTime());
+      d.setDate(d.getDate() + (isFinite(days) ? days : 0));
+      return d;
+    }
+
+    function diffDays(a, b) {
+      var msPerDay = 24 * 60 * 60 * 1000;
+      return Math.round((b.getTime() - a.getTime()) / msPerDay);
+    }
+
+    // =========================
+    // Initial render
+    // =========================
+    runAll();
+
+  })();
+  </script>
+</body>
+</html>
+```
