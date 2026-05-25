@@ -748,6 +748,8 @@
     </div>
   </div>
 
+  <script src="src/presentation/dom.js"></script>
+  <script src="src/presentation/renderers/message-renderer.js"></script>
   <script>
   (function () {
     'use strict';
@@ -755,38 +757,11 @@
     // =========================
     // DOM / Utils
     // =========================
-    function $(id) { return document.getElementById(id); }
-
-    function getNum(id) {
-      var el = $(id);
-      if (!el) return null;
-      var v = parseFloat(el.value);
-      return isFinite(v) ? v : null;
-    }
-
-    function getSelectValue(id) {
-      var el = $(id);
-      return el ? el.value : '';
-    }
-
-    function isChecked(id) {
-      var el = $(id);
-      return !!(el && el.checked);
-    }
-
-    function setMessages(outputId, messages) {
-      var out = $(outputId);
-      if (!out) return;
-
-      if (!messages || !messages.length) {
-        out.innerHTML = '';
-        return;
-      }
-      // 既存の表示スタイル維持（pタグ列 + 一部<b>を許容）
-      var html = '';
-      for (var i = 0; i < messages.length; i++) html += '<p>' + messages[i] + '</p>';
-      out.innerHTML = html;
-    }
+    var $ = window.MedcalcDom.$;
+    var getNum = window.MedcalcDom.getNum;
+    var getSelectValue = window.MedcalcDom.getSelectValue;
+    var isChecked = window.MedcalcDom.isChecked;
+    var setMessages = window.MedcalcRenderers.setMessages;
 
     function closestByClass(node, className) {
       while (node && node !== document) {
