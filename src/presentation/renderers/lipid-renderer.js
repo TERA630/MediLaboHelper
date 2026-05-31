@@ -1,11 +1,11 @@
 (function (global) {
   'use strict';
 
-  function renderRenalResult(viewModel) {
+  function renderLipidResult(viewModel) {
     var messages = viewModel && viewModel.messages ? viewModel.messages : [];
-    global.MedcalcRenderers.setMessages('renal-output', messages);
+    global.MedcalcRenderers.setMessages('lipid-output', messages);
   }
 
   global.MedcalcRenderers = global.MedcalcRenderers || {};
-  global.MedcalcRenderers.renderRenal = renderRenalResult;
+  global.MedcalcRenderers.renderLipid = renderLipidResult;
 })(window);
