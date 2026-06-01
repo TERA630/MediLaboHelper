@@ -755,22 +755,35 @@
   <script src="src/presentation/input-readers/lipid-input-reader.js"></script>
   <script src="src/presentation/input-readers/liver-input-reader.js"></script>
   <script src="src/presentation/input-readers/anemia-input-reader.js"></script>
+  <script src="src/presentation/input-readers/uro-input-reader.js"></script>
+  <script src="src/presentation/input-readers/date-calc-input-reader.js"></script>
+  <script src="src/presentation/input-readers/gamma-input-reader.js"></script>
   <script src="src/presentation/renderers/message-renderer.js"></script>
   <script src="src/domain/renal/renal-calculator.js"></script>
   <script src="src/domain/glucose/glucose-calculator.js"></script>
   <script src="src/domain/lipid/lipid-calculator.js"></script>
   <script src="src/domain/liver/liver-calculator.js"></script>
   <script src="src/domain/anemia/anemia-calculator.js"></script>
+  <script src="src/domain/uro/uro-volume-calculator.js"></script>
+  <script src="src/domain/date-calc/date-calculator.js"></script>
+  <script src="src/domain/gamma/drug-info.js"></script>
+  <script src="src/domain/gamma/gamma-calculator.js"></script>
   <script src="src/usecase/renal/run-renal.js"></script>
   <script src="src/usecase/glucose/run-glucose.js"></script>
   <script src="src/usecase/lipid/run-lipid.js"></script>
   <script src="src/usecase/liver/run-liver.js"></script>
   <script src="src/usecase/anemia/run-anemia.js"></script>
+  <script src="src/usecase/uro/run-uro.js"></script>
+  <script src="src/usecase/date-calc/run-date-calc.js"></script>
+  <script src="src/usecase/gamma/run-gamma.js"></script>
   <script src="src/presentation/renderers/renal-renderer.js"></script>
   <script src="src/presentation/renderers/glucose-renderer.js"></script>
   <script src="src/presentation/renderers/lipid-renderer.js"></script>
   <script src="src/presentation/renderers/liver-renderer.js"></script>
   <script src="src/presentation/renderers/anemia-renderer.js"></script>
+  <script src="src/presentation/renderers/uro-renderer.js"></script>
+  <script src="src/presentation/renderers/date-calc-renderer.js"></script>
+  <script src="src/presentation/renderers/gamma-renderer.js"></script>
   <script>
   (function () {
     'use strict';
@@ -910,7 +923,7 @@
       if (!sel) return;
       sel.addEventListener('change', function () {
         var key = sel.value;
-        var info = key ? DRUG_INFO[key] : null;
+        var info = window.MedcalcDomain.getGammaDrugInfo(key);
         var conc = info ? info.conc_mg_per_ml : null;
         // ① カードの濃度フィールド
         ['g_conc_a', 'g_conc_b'].forEach(function (id) {
@@ -943,38 +956,9 @@
     }
 
     function calculateUro() {
-      var longAxis = getNum('bladder_long');
-      var shortAxis = getNum('bladder_short');
-      var apAxis = getNum('bladder_ap');
-
-      var organValue = getSelectValue('organSelect') || 'prostate';
-      var messages = [];
-
-      if (longAxis && shortAxis && apAxis) {
-        var volume = longAxis * shortAxis * apAxis * 0.52;
-
-        if (organValue === "prostate") {
-          var note =
-            volume >= 50 ? "高度肥大で重症です｡" :
-            volume >= 20 ? "肥大ありで中等症です｡" :
-            "正常";
-          messages.push("前立腺容積：" + volume.toFixed(1) + " ⇒ " + note);
-        } else if (organValue === "bladder") {
-          var note2 =
-            volume >= 700 ? "高度拡張" :
-            volume >= 300 ? "拡張" :
-            "正常";
-          messages.push("膀胱容量推定: " + volume.toFixed(1) + " mL ⇒ " + note2);
-        } else if (organValue === "resualVol") {
-          var note3 =
-            volume >= 100 ? "過多：前立腺肥大があれば重症" :
-            volume >= 50 ? "境界域：前立腺肥大あれば中等症" :
-            "正常";
-          messages.push("残尿量推定: " + volume.toFixed(1) + " mL ⇒ " + note3);
-        }
-      }
-
-      setMessages('uro-output', messages);
+      var input = window.MedcalcInputReaders.readUroInput();
+      var viewModel = window.MedcalcUsecase.runUro(input);
+      window.MedcalcRenderers.renderUro(viewModel);
     }
 
     function calculateGlucose() {
@@ -997,260 +981,17 @@ function calculateLipid() {
       }
     // ---------- Date Calc（日＋週のみ / 終日含むなし） ----------
     function calculateDateCalc() {
-      var base = $('baseDate') ? $('baseDate').value : '';
-      var dateA = $('dateA') ? $('dateA').value : '';
-      var dateB = $('dateB') ? $('dateB').value : '';
-
-      var daysOffset = getNum('daysOffset');
-      var weeksOffset = getNum('weeksOffset');
-      if (daysOffset === null) daysOffset = 0;
-      if (weeksOffset === null) weeksOffset = 0;
-
-      var messages = [];
-
-      if (base) {
-        var baseDate = parseDateLocal(base);
-        var totalDays = daysOffset + weeksOffset * 7;
-        var result = addDays(baseDate, totalDays);
-
-        messages.push('基準日: ' + fmtYMD(baseDate) + '（' + weekdayJP(baseDate) + '）');
-        messages.push('加算: 日 ' + daysOffset + ' / 週 ' + weeksOffset + '（合計 ' + totalDays + ' 日）');
-        messages.push('結果日: <b>' + fmtYMD(result) + '（' + weekdayJP(result) + '）</b>');
-      } else {
-        messages.push('基準日を入力すると、加算結果を表示します。');
-      }
-
-      if (dateA && dateB) {
-        var a = parseDateLocal(dateA);
-        var b = parseDateLocal(dateB);
-        var diff = diffDays(a, b);
-
-        var sign = diff >= 0 ? '' : '−';
-        messages.push('---');
-        messages.push('日付A: ' + fmtYMD(a) + '（' + weekdayJP(a) + '）');
-        messages.push('日付B: ' + fmtYMD(b) + '（' + weekdayJP(b) + '）');
-        messages.push('差（A→B）: <b>' + sign + Math.abs(diff) + ' 日</b>');
-      }
-
-      setMessages('dateCalc-output', messages);
+      var input = window.MedcalcInputReaders.readDateCalcInput();
+      var viewModel = window.MedcalcUsecase.runDateCalc(input);
+      window.MedcalcRenderers.renderDateCalc(viewModel);
     }
 
     // ---------- γ計算 ----------
-    var DRUG_INFO = {
-      DOA: {
-        label: 'DOA（ドパミン）',
-        unit: 'γ（μg/kg/min）',
-        conc_mg_per_ml: 3,          // 150mg/50mL = 3mg/mL
-        conc_label: '150mg/50mL（0.3%シリンジ）= 3 mg/mL',
-        ranges: [
-          { label: '低用量（腎血流域）',   min: 1,   max: 3,   note: '腎・腸管血流増加' },
-          { label: '中用量（強心域）',    min: 3,   max: 10,  note: '心収縮力・心拍出量↑' },
-          { label: '高用量（血管収縮域）', min: 10,  max: 20,  note: 'α作用優位、末梢血管収縮' }
-        ]
-      },
-      DOB: {
-        label: 'DOB（ドブタミン）',
-        unit: 'γ（μg/kg/min）',
-        conc_mg_per_ml: 3,          // 150mg/50mL = 3mg/mL
-        conc_label: '150mg/50mL（0.3%シリンジ）= 3 mg/mL',
-        ranges: [
-          { label: '標準域', min: 2,  max: 10, note: 'β1刺激、心収縮力↑' },
-          { label: '高用量', min: 10, max: 20, note: '頻脈・不整脈に注意' }
-        ]
-      },
-      NAD: {
-        label: 'NAD（ノルアドレナリン）',
-        unit: 'γ（μg/kg/min）',
-        conc_mg_per_ml: 0.06,       // 3mg/50mL = 0.06mg/mL
-        conc_label: '3mg/50mL = 0.06 mg/mL',
-        ranges: [
-          { label: '低用量', min: 0.01, max: 0.1, note: '血圧維持（敗血症性ショックの第1選択）' },
-          { label: '高用量', min: 0.1,  max: 1.0, note: '強い血管収縮、虚血に注意' }
-        ]
-      },
-      hANP: {
-        label: 'hANP（カルペリチド）',
-        unit: 'γ（μg/kg/min）',
-        conc_mg_per_ml: 0.06,       // 3mg/50mL = 0.06mg/mL
-        conc_label: '3mg/50mL = 0.06 mg/mL',
-        ranges: [
-          { label: '標準投与', min: 0.0125, max: 0.025, note: '急性心不全。0.025γ固定も多い' }
-        ]
-      },
-      Landiolol: {
-        label: 'オノアクト（ランジオロール）',
-        unit: 'γ（μg/kg/min）',
-        conc_mg_per_ml: 1,          // 50mg/50mL = 1mg/mL
-        conc_label: '50mg/50mL = 1 mg/mL',
-        ranges: [
-          { label: '維持投与', min: 1,  max: 10, note: '心房細動・AFL のレートコントロール' },
-          { label: '負荷投与', min: 10, max: 40, note: '短時間の急速投与（1～2分）後に維持へ' }
-        ]
-      },
-      Nifedipine: {
-        label: 'ニフェジピン（コアテック）',
-        unit: 'γ（μg/kg/min）',
-        conc_mg_per_ml: 1,          // 50mg/50mL = 1mg/mL
-        conc_label: '50mg/50mL = 1 mg/mL',
-        ranges: [
-          { label: '標準域', min: 0.3, max: 0.5, note: '高血圧緊急症。0.5γを超えないこと' },
-          { label: '最大',   min: 0.5, max: 0.5, note: '上限。急激な血圧低下に注意' }
-        ]
-      }
-    };
-
     function calculateGamma() {
-      // 共通フォームの体重を優先、各カード内のフィールドにも反映
-      var commonWeight = getNum('weight');
-
-      // カード①・②内の体重フィールドに共通値を同期（空欄の場合のみ）
-      ['g_weight_a', 'g_weight_b'].forEach(function(id) {
-        var el = $(id);
-        if (el && el.value === '' && commonWeight !== null) {
-          el.placeholder = String(commonWeight) + ' kg（共通フォームより）';
-        } else if (el && el.value === '' && commonWeight === null) {
-          el.placeholder = '共通フォームから自動';
-        }
-      });
-
-      // ── ① 現在のγ計算 ──
-      var concA   = getNum('g_conc_a');
-      var rateA   = getNum('g_rate_a');
-      var weightA = getNum('g_weight_a');
-      if (weightA === null) weightA = commonWeight;
-
-      var msgsA = [];
-      if (concA !== null && rateA !== null && weightA !== null && weightA > 0) {
-        // γ(μg/kg/min) = 濃度(mg/mL) × 速度(mL/h) × 1000 / 60 / 体重(kg)
-        var gammaVal = (concA * rateA * 1000) / (60 * weightA);
-        msgsA.push('<span class="result-highlight">' + gammaVal.toFixed(3) + ' γ</span>');
-        msgsA.push('<span class="result-note">（μg/kg/min）</span>');
-        msgsA.push('体重 ' + weightA.toFixed(1) + ' kg　|　濃度 ' + concA + ' mg/mL　|　速度 ' + rateA + ' mL/h');
-
-        // 選択薬剤との照合
-        var selDrug = getSelectValue('g_drug_select');
-        if (selDrug && DRUG_INFO[selDrug]) {
-          var info = DRUG_INFO[selDrug];
-          var inRange = false;
-          var rangeNote = '';
-          info.ranges.forEach(function(r) {
-            if (gammaVal >= r.min && gammaVal <= r.max) {
-              inRange = true;
-              rangeNote = r.label + '：' + r.note;
-            }
-          });
-          if (inRange) {
-            msgsA.push('<b class="ok">✔ ' + info.label + ' ' + rangeNote + '</b>');
-          } else {
-            var allMin = info.ranges[0].min;
-            var allMax = info.ranges[info.ranges.length - 1].max;
-            if (gammaVal < allMin) {
-              msgsA.push('<b class="warn">▼ ' + info.label + ' 推奨範囲（' + allMin + '～' + allMax + ' γ）を下回っています</b>');
-            } else {
-              msgsA.push('<b class="warn">▲ ' + info.label + ' 推奨範囲（' + allMin + '～' + allMax + ' γ）を超えています</b>');
-            }
-          }
-        }
-      } else {
-        msgsA.push('薬剤濃度・投与速度・体重を入力してください。');
-      }
-      setMessages('gamma-output-a', msgsA);
-
-      // ── ② 目標γから速度計算 ──
-      var targetG  = getNum('g_target_gamma');
-      var concB    = getNum('g_conc_b');
-      var weightB  = getNum('g_weight_b');
-      if (weightB === null) weightB = commonWeight;
-
-      var msgsB = [];
-      if (targetG !== null && concB !== null && weightB !== null && weightB > 0 && concB > 0) {
-        // 速度(mL/h) = γ × 体重 × 60 / (濃度 × 1000)
-        var rateResult = (targetG * weightB * 60) / (concB * 1000);
-        msgsB.push('<span class="result-highlight">' + rateResult.toFixed(2) + ' mL/h</span>');
-        msgsB.push('<span class="result-note">（投与速度）</span>');
-        msgsB.push('目標 ' + targetG + ' γ　|　体重 ' + weightB.toFixed(1) + ' kg　|　濃度 ' + concB + ' mg/mL');
-      } else {
-        msgsB.push('目標γ・薬剤濃度・体重を入力してください。');
-      }
-      setMessages('gamma-output-b', msgsB);
-
-      // ── ③ 薬剤リファレンス ──
-      var selDrug2 = getSelectValue('g_drug_select');
-      var msgsDrug = [];
-      var chipsHtml = '';
-
-      // 全薬剤チップを描画
-      Object.keys(DRUG_INFO).forEach(function(key) {
-        var d = DRUG_INFO[key];
-        var rangeStr = d.ranges.map(function(r) {
-          return r.label + '：' + r.min + (r.min === r.max ? '' : '～' + r.max) + ' γ';
-        }).join('<br>');
-        var concStr = d.conc_label ? '<span style="color:#888;font-size:11px;">💊 ' + d.conc_label + '</span><br>' : '';
-        var selectedClass = (key === selDrug2) ? ' selected-drug' : '';
-        chipsHtml += '<div class="drug-chip' + selectedClass + '">';
-        chipsHtml += '<span class="drug-name">' + d.label + '</span>';
-        chipsHtml += concStr;
-        chipsHtml += '<span class="drug-range">' + rangeStr + '</span>';
-        chipsHtml += '</div>';
-      });
-
-      var chipsEl = $('gamma-drug-chips');
-      if (chipsEl) chipsEl.innerHTML = chipsHtml;
-
-      if (selDrug2 && DRUG_INFO[selDrug2]) {
-        var info2 = DRUG_INFO[selDrug2];
-        msgsDrug.push('<b>' + info2.label + '</b>');
-        if (info2.conc_label) {
-          msgsDrug.push('💊 当院採用濃度：<b>' + info2.conc_label + '</b>　→ 濃度フィールドに自動入力しました');
-        }
-        info2.ranges.forEach(function(r) {
-          msgsDrug.push(
-            r.label + '：<b>' + r.min + (r.min === r.max ? '' : '～' + r.max) + ' γ</b>　' + r.note
-          );
-        });
-      } else {
-        msgsDrug.push('薬剤を選択すると詳細が表示されます。');
-      }
-      setMessages('gamma-output-drug', msgsDrug);
+      var input = window.MedcalcInputReaders.readGammaInput();
+      var viewModel = window.MedcalcUsecase.runGamma(input);
+      window.MedcalcRenderers.renderGamma(viewModel);
     }
-
-    // 日付ユーティリティ
-    function parseDateLocal(yyyy_mm_dd) {
-      var parts = yyyy_mm_dd.split('-');
-      var y = Number(parts[0]);
-      var m = Number(parts[1]);
-      var d = Number(parts[2]);
-      return new Date(y, m - 1, d, 12, 0, 0, 0); // 正午固定
-    }
-
-    function fmtYMD(date) {
-      var y = date.getFullYear();
-      var m = String(date.getMonth() + 1);
-      if (m.length < 2) m = '0' + m;
-      var d = String(date.getDate());
-      if (d.length < 2) d = '0' + d;
-      return y + '-' + m + '-' + d;
-    }
-
-    function weekdayJP(date) {
-      return ['日','月','火','水','木','金','土'][date.getDay()];
-    }
-
-    function addDays(date, days) {
-      var d = new Date(date.getTime());
-      d.setDate(d.getDate() + (isFinite(days) ? days : 0));
-      return d;
-    }
-
-    function diffDays(a, b) {
-      var msPerDay = 24 * 60 * 60 * 1000;
-      return Math.round((b.getTime() - a.getTime()) / msPerDay);
-    }
-
-    // =========================
-    // Initial render
-    // =========================
-    runAll();
 
   })();
   </script>
