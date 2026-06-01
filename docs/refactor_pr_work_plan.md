@@ -21,10 +21,10 @@
 - PR-8: 完了。泌尿器タブを分離済み。標的臓器ごとの判定は `ORGAN_RULES` に集約し、臓器追加時の変更点を限定した。
 - PR-9: 完了。日付計算タブを分離済み。ローカル日付として扱う `parseDateLocal`、`addDays`、`diffDays` などを Domain に移した。
 - PR-10: 完了。γ計算タブを分離済み。薬剤定義は `drug-info.js`、計算は `gamma-calculator.js`、薬剤チップ描画は renderer に分離した。
+- PR-11: 完了。タブ切替、共通入力、セクションイベント委譲、薬剤選択イベント、初回全計算を `app-shell.js` に分離した。
 
 次の候補:
 
-- PR-11: App shell 抽出。
 - PR-12: 配布形態の整理。
 
 ## 現状評価
