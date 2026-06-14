@@ -9,6 +9,14 @@
     return null;
   }
 
+  function closestByClass(node, className) {
+    while (node && node !== document) {
+      if (node.classList && node.classList.contains(className)) return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+
   function createRunner(handlers) {
     return function runAll() {
       handlers.renal();
@@ -101,20 +109,42 @@
     if (!sel) return;
 
     sel.addEventListener('change', function () {
-      var key = sel.value;
-      var info = global.MedcalcDomain.getGammaDrugInfo(key);
-      var conc = info ? info.conc_mg_per_ml : null;
+      selectGammaDrug(sel.value, handlers);
+    });
+  }
 
-      ['g_conc_a', 'g_conc_b'].forEach(function (id) {
-        var el = dom.$(id);
-        if (!el) return;
-        if (conc !== null) {
-          el.value = conc;
-        } else {
-          el.value = '';
-        }
-      });
-      handlers.gamma();
+  function selectGammaDrug(key, handlers) {
+    var dom = global.MedcalcDom;
+    var sel = dom.$('g_drug_select');
+    var info = global.MedcalcDomain.getGammaDrugInfo(key);
+    var conc = info ? info.conc_mg_per_ml : null;
+
+    if (sel && sel.value !== key) {
+      sel.value = key || '';
+    }
+
+    ['g_conc_a', 'g_conc_b'].forEach(function (id) {
+      var el = dom.$(id);
+      if (!el) return;
+      if (conc !== null) {
+        el.value = conc;
+      } else {
+        el.value = '';
+      }
+    });
+    handlers.gamma();
+  }
+
+  function bindDrugChips(handlers) {
+    var root = global.MedcalcDom.$('gamma-drug-chips');
+    if (!root) return;
+
+    root.addEventListener('click', function (e) {
+      var chip = closestByClass(e.target, 'drug-chip');
+      if (!chip) return;
+      var key = chip.getAttribute('data-drug-key');
+      if (!key) return;
+      selectGammaDrug(key, handlers);
     });
   }
 
@@ -125,6 +155,7 @@
     bindCommonInputs(runAll);
     bindSections(handlers);
     bindDrugSelect(handlers);
+    bindDrugChips(handlers);
     runAll();
   }
 

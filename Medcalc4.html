@@ -148,6 +148,14 @@
   <div id="renal" class="tab-content active">
     <div class="input-area">
       <div class="input-tile">
+        <label for="renal_mode">評価モード</label>
+        <select id="renal_mode">
+          <option value="ckd_eval">CKD評価</option>
+          <option value="drug_dose">薬剤投与</option>
+        </select>
+      </div>
+
+      <div class="input-tile">
         <label for="scr">血清クレアチニン</label>
         <input type="number" id="scr" step="any" />
         <span>mg/dL</span>
@@ -648,6 +656,7 @@
         padding: 7px 10px;
         font-size: 12px;
         line-height: 1.5;
+        cursor: pointer;
       }
       #gamma .drug-chip .drug-name {
         font-weight: 700;
@@ -681,30 +690,9 @@
 
     <div class="gamma-grid">
 
-      <!-- ① 現在のγを計算 -->
+      <!-- ① 目標γから投与速度を計算 -->
       <div class="gamma-card">
-        <h3>① 現在のγを確認</h3>
-        <div class="card-row">
-          <label>薬剤濃度</label>
-          <input type="number" id="g_conc_a" step="any" placeholder="例：0.16" />
-          <span class="unit">mg/mL</span>
-        </div>
-        <div class="card-row">
-          <label>投与速度</label>
-          <input type="number" id="g_rate_a" step="any" placeholder="例：3.0" />
-          <span class="unit">mL/h</span>
-        </div>
-        <div class="card-row">
-          <label>体重</label>
-          <input type="number" id="g_weight_a" step="any" placeholder="共通フォームから自動" />
-          <span class="unit">kg</span>
-        </div>
-        <div class="output-area" id="gamma-output-a"></div>
-      </div>
-
-      <!-- ② 目標γから投与速度を計算 -->
-      <div class="gamma-card">
-        <h3>② 目標γから速度を算出</h3>
+        <h3>① 目標γから速度を算出</h3>
         <div class="card-row">
           <label>目標γ</label>
           <input type="number" id="g_target_gamma" step="any" placeholder="例：5" />
@@ -721,6 +709,27 @@
           <span class="unit">kg</span>
         </div>
         <div class="output-area" id="gamma-output-b"></div>
+      </div>
+
+      <!-- ② 現在のγを計算 -->
+      <div class="gamma-card">
+        <h3>② 現在のγを確認</h3>
+        <div class="card-row">
+          <label>薬剤濃度</label>
+          <input type="number" id="g_conc_a" step="any" placeholder="例：0.16" />
+          <span class="unit">mg/mL</span>
+        </div>
+        <div class="card-row">
+          <label>投与速度</label>
+          <input type="number" id="g_rate_a" step="any" placeholder="例：3.0" />
+          <span class="unit">mL/h</span>
+        </div>
+        <div class="card-row">
+          <label>体重</label>
+          <input type="number" id="g_weight_a" step="any" placeholder="共通フォームから自動" />
+          <span class="unit">kg</span>
+        </div>
+        <div class="output-area" id="gamma-output-a"></div>
       </div>
 
       <!-- ③ 薬剤リファレンス -->

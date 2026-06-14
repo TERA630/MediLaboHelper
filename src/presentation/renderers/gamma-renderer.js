@@ -17,7 +17,7 @@
       }).join('<br>');
       var concStr = d.conc_label ? '<span style="color:#888;font-size:11px;">💊 ' + d.conc_label + '</span><br>' : '';
       var selectedClass = (key === selectedDrug) ? ' selected-drug' : '';
-      chipsHtml += '<div class="drug-chip' + selectedClass + '">';
+      chipsHtml += '<div class="drug-chip' + selectedClass + '" data-drug-key="' + key + '">';
       chipsHtml += '<span class="drug-name">' + d.label + '</span>';
       chipsHtml += concStr;
       chipsHtml += '<span class="drug-range">' + rangeStr + '</span>';

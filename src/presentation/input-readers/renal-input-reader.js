@@ -9,6 +9,8 @@
       age: patient.age,
       weight: patient.weight,
       height: patient.height,
+      gender: patient.gender,
+      evalMode: dom.getSelectValue('renal_mode'),
       scr: dom.getNum('scr'),
       bun: dom.getNum('bun'),
       cys: dom.getNum('cys'),
@@ -19,8 +21,7 @@
       una: dom.getNum('una'),
       uk: dom.getNum('uk'),
       uua: dom.getNum('uua'),
-      uun: dom.getNum('uun'),
-      gender: patient.gender
+      uun: dom.getNum('uun')
     };
   }
 
