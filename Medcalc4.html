@@ -428,6 +428,15 @@
       </div>
 
       <div class="input-tile">
+        <label for="anemiaSex">性別</label>
+        <select id="anemiaSex">
+          <option value="">未選択</option>
+          <option value="male">男性</option>
+          <option value="female">女性</option>
+        </select>
+      </div>
+
+      <div class="input-tile">
         <label for="hct">ヘマトクリット</label>
         <input type="number" id="hct" step="any" />
         <span>%</span>
@@ -479,6 +488,24 @@
         <label for="tsat">鉄飽和率</label>
         <input type="number" id="tsat" step="any" />
         <span>%（TIBC・血清鉄あれば自動算出）</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="crpAnemia">CRP</label>
+        <input type="number" id="crpAnemia" step="any" />
+        <span>mg/dL（フェリチン解釈の補正）</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="rdw">RDW</label>
+        <input type="number" id="rdw" step="any" />
+        <span>%</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="stfrIndex">sTfR/logフェリチン index</label>
+        <input type="number" id="stfrIndex" step="any" />
+        <span>ratio</span>
       </div>
 
       <div class="input-tile">
@@ -772,6 +799,7 @@
   <script src="src/domain/glucose/glucose-calculator.js"></script>
   <script src="src/domain/lipid/lipid-calculator.js"></script>
   <script src="src/domain/liver/liver-calculator.js"></script>
+  <script src="src/domain/anemia/ida-range-table.js"></script>
   <script src="src/domain/anemia/anemia-calculator.js"></script>
   <script src="src/domain/uro/uro-volume-calculator.js"></script>
   <script src="src/domain/date-calc/date-calculator.js"></script>

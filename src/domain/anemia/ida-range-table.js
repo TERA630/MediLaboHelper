@@ -1,0 +1,46 @@
+(function (global) {
+  'use strict';
+
+  // IDA_rangetable.json と同じ臨床定義。静的HTMLから同期的に利用するためJSとして公開する。
+  global.MedcalcAnemiaRangeTable = {
+    ferritin: { unit: 'ng/mL', ranges: [
+      { max: 15, classification: 'critical_low', code: 'FERRITIN_VERY_LOW', direction: 'support', weight: 4, confidence: 'strong', message: 'フェリチン著明低値は鉄欠乏性貧血を確定的に支持します' },
+      { min: 15, max: 30, classification: 'low', code: 'FERRITIN_LOW', direction: 'support', weight: 3, confidence: 'strong', message: 'フェリチン低値は鉄欠乏性貧血を強く支持します' },
+      { min: 30, max: 100, classification: 'low_normal', code: 'FERRITIN_LOW_NORMAL', direction: 'support', weight: 1, confidence: 'weak', message: 'フェリチンは低めであり、炎症併存時は鉄欠乏を否定できません' },
+      { min: 100, classification: 'normal', code: 'FERRITIN_NORMAL', direction: 'against', weight: 2, confidence: 'moderate', message: 'フェリチン正常〜高値は鉄欠乏性貧血を支持しません（炎症の影響に注意）' }
+    ] },
+    tsat: { unit: '%', ranges: [
+      { max: 10, classification: 'critical_low', code: 'TSAT_VERY_LOW', direction: 'support', weight: 3, confidence: 'strong', message: '鉄飽和率著明低値は鉄欠乏を強く支持します' },
+      { min: 10, max: 20, classification: 'low', code: 'TSAT_LOW', direction: 'support', weight: 2, confidence: 'moderate', message: '鉄飽和率低値は鉄欠乏を支持します' },
+      { min: 20, max: 45, classification: 'normal', code: 'TSAT_NORMAL', direction: 'against', weight: 1, confidence: 'weak', message: '鉄飽和率は正常範囲です' },
+      { min: 45, classification: 'high', code: 'TSAT_HIGH', direction: 'against', weight: 2, confidence: 'moderate', message: '鉄飽和率高値は鉄過剰を示唆し、鉄欠乏を否定します' }
+    ] },
+    tibc: { unit: 'µg/dL', ranges: [
+      { max: 250, classification: 'low', code: 'TIBC_LOW', direction: 'against', weight: 1, confidence: 'weak', message: 'TIBC低値は鉄欠乏より炎症性貧血を示唆します' },
+      { min: 250, max: 360, classification: 'normal', code: 'TIBC_NORMAL', direction: 'neutral', weight: 0, confidence: 'weak', message: 'TIBCは正常範囲です' },
+      { min: 360, classification: 'high', code: 'TIBC_HIGH', direction: 'support', weight: 2, confidence: 'moderate', message: 'TIBC高値は鉄欠乏を支持します' }
+    ] },
+    uibc: { unit: 'µg/dL', ranges: [
+      { max: 300, classification: 'normal_low', code: 'UIBC_NORMAL', direction: 'neutral', weight: 0, confidence: 'weak', message: 'UIBCは参考所見です' },
+      { min: 300, classification: 'high', code: 'UIBC_HIGH', direction: 'support', weight: 1, confidence: 'weak', message: 'UIBC高値は鉄欠乏を支持します' }
+    ] },
+    mcv: { unit: 'fL', ranges: [
+      { max: 70, classification: 'critical_low', code: 'MCV_VERY_LOW', direction: 'support', weight: 2, confidence: 'moderate', message: '著明な小球性はサラセミアとの鑑別を要しますが鉄欠乏を支持します' },
+      { min: 70, max: 80, classification: 'low', code: 'MCV_LOW', direction: 'support', weight: 2, confidence: 'moderate', message: '小球性は鉄欠乏性貧血を支持します' },
+      { min: 80, max: 100, classification: 'normal', code: 'MCV_NORMAL', direction: 'neutral', weight: 0, confidence: 'weak', message: 'MCVは正常範囲です（初期IDAでは正球性のこともあります）' },
+      { min: 100, classification: 'high', code: 'MCV_HIGH', direction: 'against', weight: 2, confidence: 'moderate', message: '大球性は鉄欠乏より巨赤芽球性貧血等を示唆します' }
+    ] },
+    crp: { unit: 'mg/dL', role: 'modifier', ranges: [
+      { max: 0.5, classification: 'normal', code: 'CRP_NORMAL', direction: 'modifier', weight: 0, confidence: 'strong', message: '炎症なし。フェリチン値はそのまま解釈可能です' },
+      { min: 0.5, classification: 'high', code: 'CRP_HIGH', direction: 'modifier', weight: 0, confidence: 'strong', message: '炎症存在。フェリチン高値は偽性の可能性があり、カットオフ引き上げを要します' }
+    ] },
+    rdw: { unit: '%', ranges: [
+      { max: 15, classification: 'normal', code: 'RDW_NORMAL', direction: 'neutral', weight: 0, confidence: 'weak', message: 'RDWは正常範囲です' },
+      { min: 15, classification: 'high', code: 'RDW_HIGH', direction: 'support', weight: 1, confidence: 'weak', message: 'RDW高値は鉄欠乏を支持し、サラセミアとの鑑別に有用です' }
+    ] },
+    stfr_index: { unit: 'ratio', ranges: [
+      { max: 1, classification: 'low', code: 'STFR_INDEX_LOW', direction: 'against', weight: 2, confidence: 'moderate', message: 'sTfR index低値は炎症性貧血を示唆します' },
+      { min: 2, classification: 'high', code: 'STFR_INDEX_HIGH', direction: 'support', weight: 3, confidence: 'strong', message: 'sTfR/log-ferritin index高値は炎症併存下でも鉄欠乏を強く支持します' }
+    ] }
+  };
+})(window);

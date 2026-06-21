@@ -3,7 +3,10 @@
 
   function toAnemiaViewModel(domainResult) {
     return {
-      messages: domainResult && domainResult.messages ? domainResult.messages.slice() : []
+      messages: domainResult && domainResult.messages ? domainResult.messages.slice() : [],
+      evidenceAtoms: domainResult && domainResult.evidenceAtoms ? domainResult.evidenceAtoms.slice() : [],
+      diseaseScore: domainResult ? domainResult.diseaseScore : null,
+      idaDecision: domainResult ? domainResult.idaDecision : null
     };
   }
 

@@ -54,6 +54,172 @@ Domain Serviceは、特定のEntityやValue Objectだけに自然に所属しな
 ドメイン層は、入力値が同じなら同じ結果を返すように、できるだけ副作用の少ない実装にする。
 ファイル入出力、GUI更新、API通信、DBアクセスは行わない。
 
+
+検査値から直接診断名や判定文を返してはならない。
+各検査値は、まずRange Tableでレンジ分類し、その後 EvidenceAtom に変換し、Score Aggregator で集計し、Decision Table によって最終判定へ変換する。
+
+Range Table
+
+Range Table は、検査値を診断に変換するものではない。
+数値を臨床的なカテゴリへ分類するだけの責務を持つ。
+
+例：
+const FERRITIN_RANGES = [ { max: 5, label: "SEVERE_LOW" }, { max: 15, label: "LOW" }, { max: 50, label: "BORDERLINE_LOW" }, { max: 200, label: "NORMAL" }, { max: Infinity, label: "HIGH" }, ];
+
+EvidenceAtom
+
+EvidenceAtom は、分類済み所見を「どの病態を、どの方向に、どの程度支持するか」という小さな証拠単位に変換したものである。
+
+各 EvidenceAtom は最低限、以下を持つ。
+
+type EvidenceAtom = {
+  target: DiagnosisTarget;
+  code: string;
+  direction: "support" | "against" | "modifier" | "neutral";
+  weight: number;
+  confidence: "weak" | "moderate" | "strong";
+  source: string;
+  message: string;
+};
+
+例：
+
+{
+  target: "IRON_DEFICIENCY_ANEMIA",
+  code: "FERRITIN_LOW",
+  direction: "support",
+  weight: 3,
+  confidence: "strong",
+  source: "ferritin",
+  message: "フェリチン低値は鉄欠乏性貧血を強く支持します"
+}
+
+重要なのは、EvidenceAtom はまだ最終診断ではないという点である。
+EvidenceAtom はあくまで「証拠」であり、最終判定は Score Aggregator と Decision Table で行う。
+
+Classified Finding から EvidenceAtom への変換は、手続き的な分岐ではなく、Evidence Rule Table によって行う。
+
+例：
+
+const EVIDENCE_RULES = [
+  {
+    source: "ferritin",
+    range: "LOW",
+    atom: {
+      target: "IRON_DEFICIENCY_ANEMIA",
+      code: "FERRITIN_LOW",
+      direction: "support",
+      weight: 3,
+      confidence: "strong",
+      message: "フェリチン低値は鉄欠乏性貧血を強く支持します",
+    },
+  },
+  {
+    source: "tsat",
+    range: "LOW",
+    atom: {
+      target: "IRON_DEFICIENCY_ANEMIA",
+      code: "TSAT_LOW",
+      direction: "support",
+      weight: 2,
+      confidence: "moderate",
+      message: "TSAT低下は鉄欠乏または鉄利用障害を支持します",
+    },
+  },
+  {
+    source: "mcv",
+    range: "MICROCYTIC",
+    atom: {
+      target: "IRON_DEFICIENCY_ANEMIA",
+      code: "MICROCYTIC_ANEMIA",
+      direction: "support",
+      weight: 1,
+      confidence: "weak",
+      message: "小球性貧血は鉄欠乏性貧血と整合します",
+    },
+  },
+];
+
+新しい検査項目を追加する場合は、既存の診断分岐を書き換えるのではなく、以下を追加する。
+
+Range Table
+Evidence Rule
+必要に応じて Decision Table の判定条件
+Score Aggregator
+
+Score Aggregator は、EvidenceAtom[] を受け取り、target ごとに証拠を集計する。
+
+Score Aggregator は以下を計算する。
+
+target ごとの合計スコア
+支持する EvidenceAtom
+反証する EvidenceAtom
+modifier として扱う EvidenceAtom
+欠損している重要項目
+所見の矛盾を示す flags
+
+例：
+
+type DiseaseScore = {
+  target: DiagnosisTarget;
+  score: number;
+  supportingAtoms: EvidenceAtom[];
+  opposingAtoms: EvidenceAtom[];
+  modifierAtoms: EvidenceAtom[];
+  missingItems: string[];
+  flags: string[];
+};
+
+集計例：
+
+IRON_DEFICIENCY_ANEMIA:
+  FERRITIN_LOW +3
+  TSAT_LOW +2
+  TIBC_HIGH +1
+  MICROCYTIC_ANEMIA +1
+  total = 7
+
+Score Aggregator は、個別の診断文を直接返してはならない。
+Score Aggregator の責務は、あくまで EvidenceAtom を集計して DiseaseScore を作ることである。
+
+Decision Table
+
+Decision Table は、DiseaseScore を最終的な臨床表示へ変換する。
+
+例：
+
+const DECISION_TABLE = [
+  {
+    target: "IRON_DEFICIENCY_ANEMIA",
+    minScore: 6,
+    requiredAtoms: ["FERRITIN_LOW"],
+    excludedFlags: [],
+    label: "HIGH",
+    message: "鉄欠乏性貧血の蓋然性は高いです",
+  },
+  {
+    target: "IRON_DEFICIENCY_ANEMIA",
+    minScore: 3,
+    requiredAtoms: [],
+    excludedFlags: [],
+    label: "POSSIBLE",
+    message: "鉄欠乏性貧血の可能性があります",
+  },
+  {
+    target: "IRON_DEFICIENCY_ANEMIA",
+    minScore: 1,
+    requiredAtoms: [],
+    excludedFlags: [],
+    label: "WEAK",
+    message: "一部に鉄欠乏を示唆する所見があります",
+  },
+];
+
+Decision Table は、優先順位順に評価する。
+最初に一致した rule を採用する。
+
+
+
 # ユースケース層
 
 ユースケース層は、アプリケーション固有の処理手順を担当する。
