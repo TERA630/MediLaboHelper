@@ -6,7 +6,8 @@
       messages: domainResult && domainResult.messages ? domainResult.messages.slice() : [],
       evidenceAtoms: domainResult && domainResult.evidenceAtoms ? domainResult.evidenceAtoms.slice() : [],
       diseaseScore: domainResult ? domainResult.diseaseScore : null,
-      idaDecision: domainResult ? domainResult.idaDecision : null
+      idaDecision: domainResult ? domainResult.idaDecision : null,
+      calculatedValues: domainResult ? domainResult.calculatedValues : null
     };
   }
 

@@ -108,15 +108,6 @@
     return { label: 'INSUFFICIENT', message: '複数所見はありますが、鉄欠乏性貧血の判定には証拠が不足しています', reason: 'LOW_SCORE' };
   }
 
-  function addInputMessages(messages, values, units, sources) {
-    Object.keys(values).forEach(function (key) {
-      if (!isNumber(values[key])) return;
-      var decimals = key === 'tibc' || key === 'uibc' ? 0 : 1;
-      var suffix = sources[key] ? '（' + sources[key] + '）' : '';
-      messages.push((units[key] || key) + ': ' + values[key].toFixed(decimals) + ' ' + (units[key + '_unit'] || '') + suffix);
-    });
-  }
-
   function calculateAnemiaDomain(input) {
     input = input || {};
     var hb = input.hb;
@@ -127,39 +118,35 @@
     var uibc = input.uibc;
     var mcvCalc = isNumber(hct) && isNumber(rbc) && rbc > 0 ? hct * 1000 / rbc : null;
     var mcv = isNumber(input.mcvInput) ? input.mcvInput : mcvCalc;
-    var mcvSource = isNumber(input.mcvInput) ? '入力値' : (isNumber(mcvCalc) ? '自動算出' : '');
     if (!isNumber(tibc) && isNumber(uibc) && isNumber(serumIron)) tibc = uibc + serumIron;
     var tsatCalc = isNumber(tibc) && isNumber(serumIron) && tibc > 0 ? serumIron / tibc * 100 : null;
     var tsat = isNumber(input.tsatInput) ? input.tsatInput : tsatCalc;
-    var tsatSource = isNumber(input.tsatInput) ? '入力値' : (isNumber(tsatCalc) ? '自動算出' : '');
     var values = { ferritin: input.ferritin, tsat: tsat, tibc: tibc, uibc: uibc, mcv: mcv, crp: input.crp, rdw: input.rdw, stfr_index: input.stfrIndex };
     var built = buildEvidenceAtoms(values, input.sex);
     var score = aggregateEvidence(built.atoms, values);
     var decision = decideIda(score);
     var messages = [];
 
-    if (isNumber(hb)) messages.push('Hb: ' + hb.toFixed(1) + ' g/dL');
-    if (isNumber(hct)) messages.push('Ht: ' + hct.toFixed(1) + ' %');
-    if (isNumber(rbc)) messages.push('RBC: ' + rbc.toFixed(1) + ' 万/mm3');
-    if (isNumber(serumIron)) messages.push('血清鉄: ' + serumIron.toFixed(0) + ' μg/dL');
-    addInputMessages(messages, values, { ferritin: 'フェリチン', tsat: '鉄飽和率', tibc: 'TIBC', uibc: 'UIBC', mcv: 'MCV', crp: 'CRP', rdw: 'RDW', stfr_index: 'sTfR index', ferritin_unit: 'ng/mL', tsat_unit: '%', tibc_unit: 'μg/dL', uibc_unit: 'μg/dL', mcv_unit: 'fL', crp_unit: 'mg/dL', rdw_unit: '%', stfr_index_unit: '' }, { mcv: mcvSource, tsat: tsatSource });
-    if (isNumber(input.retic) && isNumber(rbc)) messages.push('網状球絶対数: ' + (rbc * input.retic * 10).toFixed(0) + ' /μL');
-
     if (built.atoms.length) {
-      messages.push('---');
-      messages.push('<b>鉄欠乏性貧血 Evidence 集計:</b> ' + decision.message);
-      messages.push('Evidence score: ' + score.score + '（支持 ' + score.supportingSourceCount + '項目 / 反証 ' + score.opposingAtoms.length + '項目）');
-      built.atoms.forEach(function (atom) {
-        messages.push('・[' + atom.direction + ' / W' + atom.weight + ' / ' + atom.confidence + '] ' + atom.message);
-      });
-      if (score.flags.indexOf('INFLAMMATION_PRESENT') !== -1) messages.push('※ CRP高値のため、フェリチンは急性期反応の影響を考慮して解釈してください');
-      if (score.flags.indexOf('CONFLICTING_EVIDENCE') !== -1) messages.push('※ 支持所見と反証所見が混在しています');
+      messages.push(decision.message);
     }
     if (mcv !== null) {
-      messages.push('---');
       messages.push(mcv < 80 ? '<b>小球性貧血</b>' : (mcv > 100 ? '<b>大球性貧血</b>' : '<b>正球性貧血</b>'));
     }
-    return { messages: messages, evidenceAtoms: built.atoms, diseaseScore: score, idaDecision: decision, classifications: built.classifications };
+    return {
+      messages: messages,
+      evidenceAtoms: built.atoms,
+      diseaseScore: score,
+      idaDecision: decision,
+      classifications: built.classifications,
+      calculatedValues: {
+        tsatInput: input.tsatInput,
+        tsatCalculated: tsatCalc,
+        mcvInput: input.mcvInput,
+        mcvCalculated: mcvCalc,
+        mcvForClassification: mcv
+      }
+    };
   }
 
   global.MedcalcDomain = global.MedcalcDomain || {};
