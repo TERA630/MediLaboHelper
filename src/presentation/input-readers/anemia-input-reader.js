@@ -3,6 +3,7 @@
 
   function readAnemiaInput() {
     var dom = global.MedcalcDom;
+    var patient = global.MedcalcInputReaders.readCommonInput();
 
     return {
       hb: dom.getNum('hb'),
@@ -18,7 +19,7 @@
       crp: dom.getNum('crpAnemia'),
       rdw: dom.getNum('rdw'),
       stfrIndex: dom.getNum('stfrIndex'),
-      sex: dom.getSelectValue('anemiaSex'),
+      sex: patient.gender,
       epo: dom.getNum('epo'),
       gfrStage: dom.getSelectValue('gfrAnemia'),
       esaTherapy: dom.getSelectValue('esaTherapy')
