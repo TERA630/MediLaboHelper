@@ -16,7 +16,7 @@
       uibc: dom.getNum('uibc'),
       serumIron: dom.getNum('serumIron'),
       tsatInput: dom.getNum('tsat'),
-      crp: dom.getNum('crpAnemia'),
+      inflammationStatus: dom.getSelectValue('inflammationAnemia'),
       rdw: dom.getNum('rdw'),
       stfrIndex: dom.getNum('stfrIndex'),
       sex: patient.gender,

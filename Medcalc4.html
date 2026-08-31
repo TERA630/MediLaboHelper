@@ -498,9 +498,13 @@
       </div>
 
       <div class="input-tile">
-        <label for="crpAnemia">CRP</label>
-        <input type="number" id="crpAnemia" step="any" />
-        <span>mg/dL（フェリチン解釈の補正）</span>
+        <label for="inflammationAnemia">炎症</label>
+        <select id="inflammationAnemia">
+          <option value="">選択してください</option>
+          <option value="present">あり</option>
+          <option value="absent">なし</option>
+        </select>
+        <span>フェリチン解釈に使用</span>
       </div>
 
       <div class="input-tile">

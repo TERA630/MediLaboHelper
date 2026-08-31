@@ -8,6 +8,8 @@
       diseaseScore: domainResult ? domainResult.diseaseScore : null,
       idaDecision: domainResult ? domainResult.idaDecision : null,
       ironOverloadDecision: domainResult ? domainResult.ironOverloadDecision : null,
+      generalIronStatusDecision: domainResult ? domainResult.generalIronStatusDecision : null,
+      esaIronStatusDecision: domainResult ? domainResult.esaIronStatusDecision : null,
       classifications: domainResult && domainResult.classifications ? domainResult.classifications : {},
       clinicalContext: domainResult && domainResult.clinicalContext ? domainResult.clinicalContext : null,
       calculatedValues: domainResult ? domainResult.calculatedValues : null

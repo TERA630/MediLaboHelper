@@ -28,7 +28,7 @@
     });
     var flags = viewModel.diseaseScore && viewModel.diseaseScore.flags ? viewModel.diseaseScore.flags : [];
     if (flags.indexOf('INFLAMMATION_PRESENT') !== -1) {
-      detailItems.push('<li>CRP高値のため、フェリチンは急性期反応の影響を考慮して解釈してください</li>');
+      detailItems.push('<li>炎症ありのため、フェリチンは急性期反応の影響を考慮して解釈してください</li>');
     }
     if (flags.indexOf('CONFLICTING_EVIDENCE') !== -1) {
       detailItems.push('<li>支持所見と反証所見が混在しています</li>');
@@ -46,12 +46,14 @@
     var mcvLine = formatCalculatedValue('MCV', 'fL', calculatedValues.mcvInput, calculatedValues.mcvCalculated);
     var classification = formatMcvClassification(calculatedValues.mcvForClassification);
     var decision = viewModel && viewModel.idaDecision && viewModel.evidenceAtoms && viewModel.evidenceAtoms.length ? viewModel.idaDecision.message : '';
-    var overloadDecision = viewModel && viewModel.ironOverloadDecision ? viewModel.ironOverloadDecision.message : '';
+    var generalIronStatusDecision = viewModel && viewModel.generalIronStatusDecision ? viewModel.generalIronStatusDecision.message : '';
+    var esaIronStatusDecision = viewModel && viewModel.esaIronStatusDecision ? viewModel.esaIronStatusDecision.message : '';
 
     if (tsatLine) lines.push('<p>' + tsatLine + '</p>');
     if (mcvLine) lines.push('<p>' + mcvLine + '</p>');
     if (decision) lines.push('<p><b>鉄欠乏性貧血判定：</b>' + decision + '</p>');
-    if (overloadDecision) lines.push('<p><b>鉄過剰評価：</b>' + overloadDecision + '</p>');
+    if (generalIronStatusDecision) lines.push('<p><b>一般鉄状態：</b>' + generalIronStatusDecision + '</p>');
+    if (esaIronStatusDecision) lines.push('<p><b>ESA/HIF-PH阻害剤投与時の鉄状態：</b>' + esaIronStatusDecision + '</p>');
     if (classification) lines.push('<p><b>' + classification + '</b></p>');
     lines.push(formatEvidenceDetails(viewModel));
     out.innerHTML = lines.join('');
