@@ -3,7 +3,7 @@
 
   function readAnemiaInput() {
     var dom = global.MedcalcDom;
-    var patient = global.MedcalcInputReaders.readCommonInput();
+    var patient = global.MedcalcInputReaders.readPatientContext();
 
     return {
       hb: dom.getNum('hb'),

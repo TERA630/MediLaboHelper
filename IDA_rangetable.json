@@ -1,44 +1,124 @@
 {
+  "hemoglobin": {
+    "unit": "g/dL",
+    "ranges": [
+      {
+        "sex": "male",
+        "max": 13,
+        "classification": "anemia",
+        "code": "ANEMIA_PRESENT",
+        "direction": "support",
+        "weight": 0,
+        "confidence": "strong",
+        "role": "required_context",
+        "target": "ANEMIA",
+        "message": "男性でヘモグロビン13 g/dL未満のため、貧血を認めます"
+      },
+      {
+        "sex": "female",
+        "max": 12,
+        "classification": "anemia",
+        "code": "ANEMIA_PRESENT",
+        "direction": "support",
+        "weight": 0,
+        "confidence": "strong",
+        "role": "required_context",
+        "target": "ANEMIA",
+        "message": "女性でヘモグロビン12 g/dL未満のため、貧血を認めます"
+      },
+      {
+        "sex": "male",
+        "min": 13,
+        "classification": "not_anemic",
+        "code": "ANEMIA_NOT_PRESENT",
+        "direction": "against",
+        "weight": 0,
+        "confidence": "strong",
+        "role": "required_context",
+        "target": "ANEMIA",
+        "message": "男性でヘモグロビン13 g/dL以上のため、貧血の基準を満たしません"
+      },
+      {
+        "sex": "female",
+        "min": 12,
+        "classification": "not_anemic",
+        "code": "ANEMIA_NOT_PRESENT",
+        "direction": "against",
+        "weight": 0,
+        "confidence": "strong",
+        "role": "required_context",
+        "target": "ANEMIA",
+        "message": "女性でヘモグロビン12 g/dL以上のため、貧血の基準を満たしません"
+      }
+    ]
+  },
   "ferritin": {
     "unit": "ng/mL",
     "ranges": [
       {
         "max": 15,
-        "classification": "critical_low",
-        "code": "FERRITIN_VERY_LOW",
+        "classification": "very_low_lt15",
+        "code": "FERRITIN_LT15",
         "direction": "support",
         "weight": 4,
         "confidence": "strong",
-        "message": "フェリチン著明低値は鉄欠乏性貧血を確定的に支持します"
+        "diagnosticRole": "standalone_when_anemia_present",
+        "requiresForIda": ["ANEMIA_PRESENT"],
+        "requiresCorroboration": false,
+        "diagnosticAccuracy": { "sensitivity": 0.59, "specificity": 0.99 },
+        "guideline": "AGA",
+        "message": "フェリチン15 ng/mL未満です。貧血があれば鉄欠乏性貧血として診断的です（感度59％、特異度99％）"
       },
       {
         "min": 15,
         "max": 30,
-        "classification": "low",
-        "code": "FERRITIN_LOW",
+        "classification": "low_15_to_lt30",
+        "code": "FERRITIN_LT30",
         "direction": "support",
         "weight": 3,
         "confidence": "strong",
-        "message": "フェリチン低値は鉄欠乏性貧血を強く支持します"
+        "diagnosticRole": "corroborative",
+        "requiresForIda": ["ANEMIA_PRESENT", "OTHER_IRON_METABOLISM_SUPPORT"],
+        "requiresCorroboration": true,
+        "message": "フェリチン30 ng/mL未満であり、鉄貯蔵低下が強く示唆されます"
       },
       {
         "min": 30,
-        "max": 100,
-        "classification": "low_normal",
-        "code": "FERRITIN_LOW_NORMAL",
+        "max": 45,
+        "classification": "aga_low_30_to_lt45",
+        "code": "FERRITIN_LT45_AGA",
         "direction": "support",
-        "weight": 1,
-        "confidence": "weak",
-        "message": "フェリチンは低めであり、炎症併存時は鉄欠乏を否定できません"
+        "weight": 2,
+        "confidence": "strong",
+        "diagnosticRole": "corroborative",
+        "requiresForIda": ["ANEMIA_PRESENT", "OTHER_IRON_METABOLISM_SUPPORT"],
+        "requiresCorroboration": true,
+        "diagnosticAccuracy": { "sensitivity": 0.85, "specificity": 0.92 },
+        "guideline": "AGA",
+        "message": "フェリチン45 ng/mL未満は、貧血患者における鉄欠乏の診断的カットオフです（感度85％、特異度92％）"
       },
       {
-        "min": 100,
-        "classification": "normal",
-        "code": "FERRITIN_NORMAL",
-        "direction": "against",
-        "weight": 2,
-        "confidence": "moderate",
-        "message": "フェリチン正常〜高値は鉄欠乏性貧血を支持しません（炎症の影響に注意）"
+        "min": 45,
+        "max": 70,
+        "classification": "inflammation_dependent_45_to_lt70",
+        "code": "FERRITIN_45_TO_LT70",
+        "direction": "neutral",
+        "weight": 0,
+        "confidence": "weak",
+        "diagnosticRole": "context_dependent",
+        "requiresCorroboration": true,
+        "message": "フェリチン45～70 ng/mLです。フェリチン単独では鉄欠乏を判定できません"
+      },
+      {
+        "min": 70,
+        "classification": "not_low_ge70",
+        "code": "FERRITIN_NOT_LOW",
+        "direction": "neutral",
+        "weight": 0,
+        "confidence": "weak",
+        "diagnosticRole": "not_diagnostic",
+        "requiresCorroboration": true,
+        "message": "フェリチン70 ng/mL以上です。鉄欠乏の評価には他の鉄代謝所見を確認してください"
       }
     ]
   },
@@ -253,5 +333,52 @@
         "message": "sTfR index低値は炎症性貧血を示唆します"
       }
     ]
+  },
+  "evidenceRules": {
+    "ferritinWithInflammation": {
+      "rangeClassification": "inflammation_dependent_45_to_lt70",
+      "requiredContext": "INFLAMMATION_PRESENT",
+      "atom": {
+        "target": "IRON_DEFICIENCY",
+        "code": "FERRITIN_LT70_WITH_INFLAMMATION",
+        "direction": "support",
+        "weight": 2,
+        "confidence": "moderate",
+        "evidenceCertainty": "low",
+        "evidenceGroup": "iron_metabolism",
+        "diagnosticRole": "corroborative",
+        "requiresForIda": ["ANEMIA_PRESENT", "INFLAMMATION_PRESENT", "OTHER_IRON_METABOLISM_SUPPORT"],
+        "requiresCorroboration": true,
+        "guideline": "WHO",
+        "message": "炎症がありフェリチン70 ng/mL未満です。炎症によるフェリチン上昇を考慮しても鉄欠乏を示唆します"
+      }
+    },
+    "ferritinOverload": [
+      {
+        "sex": "female",
+        "requiredContext": "INFLAMMATION_ABSENT",
+        "operator": "gt",
+        "value": 200
+      },
+      {
+        "sex": "male",
+        "requiredContext": "INFLAMMATION_ABSENT",
+        "operator": "gt",
+        "value": 300
+      }
+    ],
+    "ferritinOverloadAtom": {
+      "target": "IRON_OVERLOAD",
+      "code": "FERRITIN_HIGH_FOR_SEX",
+      "direction": "support",
+      "weight": 2,
+      "confidence": "moderate",
+      "evidenceGroup": "iron_metabolism",
+      "diagnosticRole": "screening_alert",
+      "requiresCorroboration": true,
+      "recommendedCorroboration": ["TSAT_HIGH"],
+      "guideline": "EASL",
+      "message": "炎症を認めない状態でフェリチンが性別基準を超えています。鉄過剰を疑い、TSATなどを確認してください"
+    }
   }
 }

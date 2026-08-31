@@ -7,6 +7,9 @@
       evidenceAtoms: domainResult && domainResult.evidenceAtoms ? domainResult.evidenceAtoms.slice() : [],
       diseaseScore: domainResult ? domainResult.diseaseScore : null,
       idaDecision: domainResult ? domainResult.idaDecision : null,
+      ironOverloadDecision: domainResult ? domainResult.ironOverloadDecision : null,
+      classifications: domainResult && domainResult.classifications ? domainResult.classifications : {},
+      clinicalContext: domainResult && domainResult.clinicalContext ? domainResult.clinicalContext : null,
       calculatedValues: domainResult ? domainResult.calculatedValues : null
     };
   }

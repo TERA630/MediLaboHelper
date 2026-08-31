@@ -46,10 +46,12 @@
     var mcvLine = formatCalculatedValue('MCV', 'fL', calculatedValues.mcvInput, calculatedValues.mcvCalculated);
     var classification = formatMcvClassification(calculatedValues.mcvForClassification);
     var decision = viewModel && viewModel.idaDecision && viewModel.evidenceAtoms && viewModel.evidenceAtoms.length ? viewModel.idaDecision.message : '';
+    var overloadDecision = viewModel && viewModel.ironOverloadDecision ? viewModel.ironOverloadDecision.message : '';
 
     if (tsatLine) lines.push('<p>' + tsatLine + '</p>');
     if (mcvLine) lines.push('<p>' + mcvLine + '</p>');
-    if (decision) lines.push('<p>' + decision + '</p>');
+    if (decision) lines.push('<p><b>鉄欠乏性貧血判定：</b>' + decision + '</p>');
+    if (overloadDecision) lines.push('<p><b>鉄過剰評価：</b>' + overloadDecision + '</p>');
     if (classification) lines.push('<p><b>' + classification + '</b></p>');
     lines.push(formatEvidenceDetails(viewModel));
     out.innerHTML = lines.join('');
