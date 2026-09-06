@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cardio UI integration tests</title>
+  <style>
+    iframe { width: 390px; height: 800px; border: 0; }
+  </style>
+</head>
+<body data-test-result="running">
+  <pre id="results">Running...</pre>
+  <iframe id="app" src="../Medcalc4.html" title="MediLaboHelper test target"></iframe>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var lines = [];
+      var passed = 0;
+      var failed = 0;
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message);
+      }
+
+      function test(name, callback) {
+        try {
+          callback();
+          passed += 1;
+          lines.push('PASS ' + name);
+        } catch (error) {
+          failed += 1;
+          lines.push('FAIL ' + name + '\n  ' + error.message);
+        }
+      }
+
+      function dispatch(element, eventName) {
+        element.dispatchEvent(new Event(eventName, { bubbles: true }));
+      }
+
+      function scoreText(doc) {
+        var score = doc.querySelector('#cardio-output .cardio-score-value strong');
+        return score ? score.textContent : '';
+      }
+
+      document.getElementById('app').addEventListener('load', function () {
+        try {
+          var doc = this.contentDocument;
+          var appWindow = this.contentWindow;
+
+          test('all nine top-level tabs activate', function () {
+            var tabButtons = doc.querySelectorAll('.tab-button');
+            assert(tabButtons.length === 9, 'expected 9 top-level tabs');
+            for (var i = 0; i < tabButtons.length; i += 1) {
+              tabButtons[i].click();
+              var tabId = tabButtons[i].getAttribute('data-tab');
+              assert(doc.getElementById(tabId).classList.contains('active'), tabId + ' did not activate');
+              assert(doc.querySelectorAll('.tab-content.active').length === 1, 'multiple tab contents are active');
+            }
+          });
+
+          test('common patient inputs and renal calculation still work', function () {
+            var age = doc.getElementById('age');
+            var gender = doc.getElementById('gender');
+            var height = doc.getElementById('height');
+            var weight = doc.getElementById('weight');
+            var scr = doc.getElementById('scr');
+            age.value = '60';
+            dispatch(age, 'input');
+            gender.value = 'male';
+            dispatch(gender, 'change');
+            height.value = '170';
+            dispatch(height, 'input');
+            weight.value = '65';
+            dispatch(weight, 'input');
+            scr.value = '1.2';
+            dispatch(scr, 'input');
+            assert(doc.getElementById('renal-output').textContent.indexOf('標準化eGFRcr') !== -1, 'renal result was not rendered');
+          });
+
+          doc.querySelector('[data-tab="cardio"]').click();
+
+          test('Wells is the initial cardio score', function () {
+            assert(doc.querySelector('[data-cardio-score="wells-pe"]').getAttribute('aria-pressed') === 'true', 'Wells is not selected');
+            assert(!doc.getElementById('cardio-form-wells-pe').hidden, 'Wells form is hidden');
+            assert(doc.getElementById('cardio-form-cha2ds2-vasc').hidden, 'CHA2DS2-VASc form is visible');
+            assert(doc.getElementById('cardio-form-has-bled').hidden, 'HAS-BLED form is visible');
+          });
+
+          test('Wells input is calculated in the domain flow', function () {
+            var heartRate = doc.getElementById('cardio-wells-heart-rate');
+            var dvtSigns = doc.getElementById('cardio-wells-dvt-signs');
+            heartRate.value = '101';
+            dispatch(heartRate, 'input');
+            dvtSigns.checked = true;
+            dispatch(dvtSigns, 'change');
+            assert(scoreText(doc) === '4.5', 'expected Wells score 4.5');
+            assert(doc.getElementById('cardio-output').textContent.indexOf('PE likely') !== -1, 'PE likely is missing');
+          });
+
+          test('cardio-specific input recalculates only cardio', function () {
+            var cardioRender = appWindow.MedcalcRenderers.renderCardio;
+            var renalRender = appWindow.MedcalcRenderers.renderRenal;
+            var cardioCount = 0;
+            var renalCount = 0;
+            appWindow.MedcalcRenderers.renderCardio = function (viewModel) {
+              cardioCount += 1;
+              cardioRender(viewModel);
+            };
+            appWindow.MedcalcRenderers.renderRenal = function (viewModel) {
+              renalCount += 1;
+              renalRender(viewModel);
+            };
+            try {
+              var heartRate = doc.getElementById('cardio-wells-heart-rate');
+              heartRate.value = '102';
+              dispatch(heartRate, 'input');
+            } finally {
+              appWindow.MedcalcRenderers.renderCardio = cardioRender;
+              appWindow.MedcalcRenderers.renderRenal = renalRender;
+            }
+            assert(cardioCount === 1, 'cardio was not recalculated exactly once');
+            assert(renalCount === 0, 'renal was unexpectedly recalculated');
+          });
+
+          test('CHA2DS2-VASc uses common age and sex', function () {
+            doc.querySelector('[data-cardio-score="cha2ds2-vasc"]').click();
+            var age = doc.getElementById('age');
+            var gender = doc.getElementById('gender');
+            var hypertension = doc.getElementById('cardio-cha-hypertension');
+            age.value = '74';
+            dispatch(age, 'input');
+            gender.value = 'female';
+            dispatch(gender, 'change');
+            hypertension.checked = true;
+            dispatch(hypertension, 'change');
+            assert(scoreText(doc) === '3', 'expected CHA2DS2-VASc score 3');
+            assert(doc.getElementById('cardio-cha-age-summary').textContent.indexOf('+1') !== -1, 'age summary is incorrect');
+            assert(doc.getElementById('cardio-cha-gender-summary').textContent.indexOf('+1') !== -1, 'sex summary is incorrect');
+          });
+
+          test('HAS-BLED uses common age and raw SBP', function () {
+            doc.querySelector('[data-cardio-score="has-bled"]').click();
+            var age = doc.getElementById('age');
+            var sbp = doc.getElementById('cardio-has-sbp');
+            var renal = doc.getElementById('cardio-has-renal');
+            age.value = '66';
+            dispatch(age, 'input');
+            sbp.value = '161';
+            dispatch(sbp, 'input');
+            renal.checked = true;
+            dispatch(renal, 'change');
+            assert(scoreText(doc) === '3', 'expected HAS-BLED score 3');
+            assert(doc.getElementById('cardio-output').textContent.indexOf('慎重なフォロー') !== -1, 'non-directive follow-up note is missing');
+          });
+
+          test('score switching preserves prior values', function () {
+            doc.querySelector('[data-cardio-score="wells-pe"]').click();
+            assert(doc.getElementById('cardio-wells-heart-rate').value === '102', 'Wells heart rate was lost');
+            doc.querySelector('[data-cardio-score="cha2ds2-vasc"]').click();
+            assert(doc.getElementById('cardio-cha-hypertension').checked, 'CHA2DS2-VASc hypertension was lost');
+          });
+
+          test('common changes recalculate CHA2DS2-VASc', function () {
+            var age = doc.getElementById('age');
+            var gender = doc.getElementById('gender');
+            var cardioRender = appWindow.MedcalcRenderers.renderCardio;
+            var renalRender = appWindow.MedcalcRenderers.renderRenal;
+            var cardioCount = 0;
+            var renalCount = 0;
+            appWindow.MedcalcRenderers.renderCardio = function (viewModel) {
+              cardioCount += 1;
+              cardioRender(viewModel);
+            };
+            appWindow.MedcalcRenderers.renderRenal = function (viewModel) {
+              renalCount += 1;
+              renalRender(viewModel);
+            };
+            age.value = '75';
+            try {
+              dispatch(age, 'input');
+            } finally {
+              appWindow.MedcalcRenderers.renderCardio = cardioRender;
+              appWindow.MedcalcRenderers.renderRenal = renalRender;
+            }
+            assert(cardioCount === 1 && renalCount === 1, 'common age did not run all calculators');
+            assert(scoreText(doc) === '4', 'age 75 did not replace age 65-74 scoring');
+            gender.value = 'male';
+            dispatch(gender, 'change');
+            assert(scoreText(doc) === '3', 'sex change did not recalculate score');
+          });
+
+          test('cardio layout does not overflow at 390px', function () {
+            doc.querySelector('[data-tab="cardio"]').click();
+            assert(doc.documentElement.scrollWidth <= doc.documentElement.clientWidth, 'horizontal overflow detected');
+          });
+        } catch (error) {
+          failed += 1;
+          lines.push('FAIL test harness\n  ' + error.message);
+        }
+
+        lines.push('');
+        lines.push(passed + ' passed, ' + failed + ' failed');
+        document.getElementById('results').textContent = lines.join('\n');
+        document.body.setAttribute('data-test-result', failed === 0 ? 'passed' : 'failed');
+      });
+    })();
+  </script>
+</body>
+</html>

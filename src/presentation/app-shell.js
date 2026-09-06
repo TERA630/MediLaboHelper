@@ -25,6 +25,7 @@
       handlers.liver();
       handlers.anemia();
       handlers.uro();
+      handlers.cardio();
       handlers.dateCalc();
       handlers.gamma();
     };
@@ -99,6 +100,7 @@
     bindSection('liver', handlers.liver);
     bindSection('anemia', handlers.anemia);
     bindSection('uro', handlers.uro);
+    bindSection('cardio', handlers.cardio);
     bindSection('dateCalc', handlers.dateCalc);
     bindSection('gamma', handlers.gamma);
   }
@@ -148,12 +150,42 @@
     });
   }
 
+  function bindCardioScoreSelector(handlers) {
+    var root = global.MedcalcDom.$('cardio');
+    if (!root) return;
+
+    root.addEventListener('click', function (e) {
+      var button = closestByClass(e.target, 'score-option');
+      if (!button) return;
+
+      var selectedScore = button.getAttribute('data-cardio-score');
+      if (!selectedScore) return;
+
+      var buttons = root.querySelectorAll('[data-cardio-score]');
+      var forms = root.querySelectorAll('[data-cardio-form]');
+      var i;
+      for (i = 0; i < buttons.length; i += 1) {
+        var isSelectedButton = buttons[i].getAttribute('data-cardio-score') === selectedScore;
+        buttons[i].classList.toggle('active', isSelectedButton);
+        buttons[i].setAttribute('aria-pressed', isSelectedButton ? 'true' : 'false');
+      }
+      for (i = 0; i < forms.length; i += 1) {
+        var isSelectedForm = forms[i].getAttribute('data-cardio-form') === selectedScore;
+        forms[i].hidden = !isSelectedForm;
+        forms[i].setAttribute('aria-hidden', isSelectedForm ? 'false' : 'true');
+      }
+
+      handlers.cardio();
+    });
+  }
+
   function initAppShell(handlers) {
     var runAll = createRunner(handlers);
 
     bindTabs();
     bindCommonInputs(runAll);
     bindSections(handlers);
+    bindCardioScoreSelector(handlers);
     bindDrugSelect(handlers);
     bindDrugChips(handlers);
     runAll();

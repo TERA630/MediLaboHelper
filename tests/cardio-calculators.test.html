@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cardio calculator tests</title>
+</head>
+<body data-test-result="running">
+  <pre id="results"></pre>
+
+  <script src="../src/domain/cardio/cardio-score-utils.js"></script>
+  <script src="../src/domain/cardio/wells-pe-calculator.js"></script>
+  <script src="../src/domain/cardio/cha2ds2-vasc-calculator.js"></script>
+  <script src="../src/domain/cardio/has-bled-calculator.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var domain = window.MedcalcDomain;
+      var output = document.getElementById('results');
+      var passed = 0;
+      var failed = 0;
+      var lines = [];
+
+      function assertEqual(actual, expected, message) {
+        if (actual !== expected) {
+          throw new Error(message + ': expected ' + expected + ', received ' + actual);
+        }
+      }
+
+      function test(name, callback) {
+        try {
+          callback();
+          passed += 1;
+          lines.push('PASS ' + name);
+        } catch (error) {
+          failed += 1;
+          lines.push('FAIL ' + name + '\n  ' + error.message);
+        }
+      }
+
+      function component(result, code) {
+        return result.components.filter(function (entry) { return entry.code === code; })[0];
+      }
+
+      test('Wells: HR 100 is 0 points', function () {
+        var result = domain.calculateWellsPe({ heartRate: 100 });
+        assertEqual(result.score, 0, 'score');
+        assertEqual(component(result, 'HEART_RATE_OVER_100').active, false, 'HR component');
+      });
+
+      test('Wells: HR 101 adds 1.5 points', function () {
+        var result = domain.calculateWellsPe({ heartRate: 101 });
+        assertEqual(result.score, 1.5, 'score');
+        assertEqual(component(result, 'HEART_RATE_OVER_100').active, true, 'HR component');
+      });
+
+      test('Wells: total 4.0 is PE unlikely', function () {
+        var result = domain.calculateWellsPe({ heartRate: 80, dvtSigns: true, hemoptysis: true });
+        assertEqual(result.score, 4, 'score');
+        assertEqual(result.interpretation.twoTier, 'PE unlikely', '2-tier');
+      });
+
+      test('Wells: total 4.5 is PE likely', function () {
+        var result = domain.calculateWellsPe({ heartRate: 80, dvtSigns: true, previousDvtOrPe: true });
+        assertEqual(result.score, 4.5, 'score');
+        assertEqual(result.interpretation.twoTier, 'PE likely', '2-tier');
+      });
+
+      test('Wells: 3-tier total 2 is Intermediate', function () {
+        var result = domain.calculateWellsPe({ heartRate: 80, hemoptysis: true, activeMalignancy: true });
+        assertEqual(result.score, 2, 'score');
+        assertEqual(result.interpretation.threeTier, 'Intermediate', '3-tier');
+      });
+
+      test('Wells: 3-tier total 6 is Intermediate', function () {
+        var result = domain.calculateWellsPe({ heartRate: 80, dvtSigns: true, peMostLikely: true });
+        assertEqual(result.score, 6, 'score');
+        assertEqual(result.interpretation.threeTier, 'Intermediate', '3-tier');
+      });
+
+      test('Wells: 3-tier total over 6 is High', function () {
+        var result = domain.calculateWellsPe({ heartRate: 80, dvtSigns: true, peMostLikely: true, hemoptysis: true });
+        assertEqual(result.score, 7, 'score');
+        assertEqual(result.interpretation.threeTier, 'High', '3-tier');
+      });
+
+      test('Wells: maximum score is 12.5', function () {
+        var result = domain.calculateWellsPe({
+          heartRate: 101,
+          dvtSigns: true,
+          peMostLikely: true,
+          immobilizationOrSurgery: true,
+          previousDvtOrPe: true,
+          hemoptysis: true,
+          activeMalignancy: true
+        });
+        assertEqual(result.score, 12.5, 'score');
+      });
+
+      test('Wells: empty input has no risk interpretation', function () {
+        var result = domain.calculateWellsPe({});
+        assertEqual(result.hasAnyInput, false, 'hasAnyInput');
+        assertEqual(result.interpretation, null, 'interpretation');
+      });
+
+      test('CHA2DS2-VASc: age 64 is 0 points', function () {
+        assertEqual(domain.calculateCha2ds2Vasc({ age: 64, gender: 'male' }).score, 0, 'score');
+      });
+
+      test('CHA2DS2-VASc: age 65 is 1 point', function () {
+        assertEqual(domain.calculateCha2ds2Vasc({ age: 65, gender: 'male' }).score, 1, 'score');
+      });
+
+      test('CHA2DS2-VASc: age 74 is 1 point', function () {
+        assertEqual(domain.calculateCha2ds2Vasc({ age: 74, gender: 'male' }).score, 1, 'score');
+      });
+
+      test('CHA2DS2-VASc: age 75 is 2 points without duplicate age scoring', function () {
+        var result = domain.calculateCha2ds2Vasc({ age: 75, gender: 'male' });
+        assertEqual(result.score, 2, 'score');
+        assertEqual(component(result, 'AGE_75_OR_OLDER').active, true, 'age 75 component');
+        assertEqual(component(result, 'AGE_65_TO_74').active, false, 'age 65-74 component');
+      });
+
+      test('CHA2DS2-VASc: female sex adds 1 point', function () {
+        assertEqual(domain.calculateCha2ds2Vasc({ age: 64, gender: 'female' }).score, 1, 'score');
+      });
+
+      test('CHA2DS2-VASc: stroke/TIA/TE adds 2 points', function () {
+        assertEqual(domain.calculateCha2ds2Vasc({
+          age: 64,
+          gender: 'male',
+          strokeTiaThromboembolism: true
+        }).score, 2, 'score');
+      });
+
+      test('CHA2DS2-VASc: maximum score is 9', function () {
+        var result = domain.calculateCha2ds2Vasc({
+          age: 75,
+          gender: 'female',
+          congestiveHeartFailure: true,
+          hypertension: true,
+          diabetesMellitus: true,
+          strokeTiaThromboembolism: true,
+          vascularDisease: true
+        });
+        assertEqual(result.score, 9, 'score');
+      });
+
+      test('CHA2DS2-VASc: missing common data is reported', function () {
+        var result = domain.calculateCha2ds2Vasc({});
+        assertEqual(result.missingItems.indexOf('年齢') !== -1, true, 'missing age');
+        assertEqual(result.missingItems.indexOf('性別') !== -1, true, 'missing sex');
+      });
+
+      test('HAS-BLED: age 65 is 0 points', function () {
+        assertEqual(domain.calculateHasBled({ age: 65, systolicBloodPressure: 120 }).score, 0, 'score');
+      });
+
+      test('HAS-BLED: age 66 is 1 point', function () {
+        assertEqual(domain.calculateHasBled({ age: 66, systolicBloodPressure: 120 }).score, 1, 'score');
+      });
+
+      test('HAS-BLED: SBP 160 is 0 and SBP 161 is 1 point', function () {
+        assertEqual(domain.calculateHasBled({ age: 40, systolicBloodPressure: 160 }).score, 0, 'SBP 160 score');
+        assertEqual(domain.calculateHasBled({ age: 40, systolicBloodPressure: 161 }).score, 1, 'SBP 161 score');
+      });
+
+      test('HAS-BLED: renal and liver dysfunction score independently', function () {
+        var result = domain.calculateHasBled({
+          age: 40,
+          systolicBloodPressure: 120,
+          abnormalRenalFunction: true,
+          abnormalLiverFunction: true
+        });
+        assertEqual(result.score, 2, 'score');
+      });
+
+      test('HAS-BLED: drugs and alcohol score independently', function () {
+        var result = domain.calculateHasBled({
+          age: 40,
+          systolicBloodPressure: 120,
+          drugs: true,
+          alcohol: true
+        });
+        assertEqual(result.score, 2, 'score');
+      });
+
+      test('HAS-BLED: maximum score is 9', function () {
+        var result = domain.calculateHasBled({
+          age: 66,
+          systolicBloodPressure: 161,
+          abnormalRenalFunction: true,
+          abnormalLiverFunction: true,
+          stroke: true,
+          bleedingHistoryOrPredisposition: true,
+          labileInr: true,
+          drugs: true,
+          alcohol: true
+        });
+        assertEqual(result.score, 9, 'score');
+      });
+
+      test('HAS-BLED: missing common age and SBP are reported', function () {
+        var result = domain.calculateHasBled({});
+        assertEqual(result.missingItems.indexOf('年齢') !== -1, true, 'missing age');
+        assertEqual(result.missingItems.indexOf('収縮期血圧') !== -1, true, 'missing SBP');
+      });
+
+      lines.push('');
+      lines.push(passed + ' passed, ' + failed + ' failed');
+      output.textContent = lines.join('\n');
+      document.body.setAttribute('data-test-result', failed === 0 ? 'passed' : 'failed');
+    })();
+  </script>
+</body>
+</html>

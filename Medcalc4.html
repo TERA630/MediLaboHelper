@@ -119,6 +119,166 @@
       margin: 8px 0 0;
       padding-left: 20px;
     }
+
+    #cardio .score-selector {
+      grid-column: 1 / -1;
+      background: white;
+      padding: 14px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    #cardio .score-selector-title {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    #cardio .score-selector-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    #cardio .score-option {
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid #cbd3da;
+      border-radius: 8px;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    #cardio .score-option:hover {
+      border-color: #0078d7;
+    }
+
+    #cardio .score-option.active {
+      border-color: #0078d7;
+      background: #0078d7;
+      color: white;
+      box-shadow: 0 2px 5px rgba(0,120,215,0.22);
+    }
+
+    #cardio .score-option-label,
+    #cardio .score-option-name {
+      display: block;
+    }
+
+    #cardio .score-option-label {
+      margin-bottom: 3px;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    #cardio .score-option-name {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    #cardio .score-form {
+      display: contents;
+    }
+
+    #cardio .score-form[hidden] {
+      display: none;
+    }
+
+    #cardio .patient-context-tile {
+      background: #f0f6ff;
+      border: 1px solid #b8d4f5;
+      box-shadow: none;
+    }
+
+    #cardio .patient-context-tile p {
+      margin: 3px 0;
+      font-size: 13px;
+    }
+
+    #cardio .cardio-result h2,
+    #cardio .cardio-result h3 {
+      margin-top: 0;
+    }
+
+    #cardio .cardio-result h2 {
+      color: #0055a8;
+      font-size: 19px;
+    }
+
+    #cardio .cardio-result h3 {
+      margin: 18px 0 8px;
+      font-size: 14px;
+    }
+
+    #cardio .cardio-score-value {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin: 8px 0 14px;
+    }
+
+    #cardio .cardio-score-value strong {
+      color: #0055a8;
+      font-size: 34px;
+      line-height: 1;
+    }
+
+    #cardio .cardio-score-value span {
+      font-weight: bold;
+    }
+
+    #cardio .cardio-interpretation p {
+      margin: 6px 0;
+    }
+
+    #cardio .cardio-guidance,
+    #cardio .cardio-missing {
+      padding: 9px 10px;
+      border-radius: 6px;
+      background: #fff8e1;
+      color: #6d5700;
+      font-size: 13px;
+    }
+
+    #cardio .cardio-breakdown {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    #cardio .cardio-breakdown li {
+      margin: 5px 0;
+    }
+
+    #cardio .cardio-no-points {
+      color: #666;
+    }
+
+    #cardio .cardio-safety-note {
+      margin: 18px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid #e0e0e0;
+      color: #666;
+      font-size: 12px;
+    }
+
+    @media (max-width: 720px) {
+      #cardio.tab-content.active {
+        flex-direction: column;
+      }
+
+      #cardio .input-area,
+      #cardio .output-area {
+        box-sizing: border-box;
+        min-width: 0;
+        width: 100%;
+      }
+
+      #cardio .score-selector-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 
@@ -156,6 +316,7 @@
     <button class="tab-button" data-tab="liver">肝機能</button>
     <button class="tab-button" data-tab="anemia">貧血</button>
     <button class="tab-button" data-tab="uro">泌尿器</button>
+    <button class="tab-button" data-tab="cardio">循環器</button>
     <button class="tab-button" data-tab="dateCalc">日付計算</button>
     <button class="tab-button" data-tab="gamma">γ計算</button>
   </div>
@@ -587,6 +748,177 @@
     <div class="output-area" id="uro-output"></div>
   </div>
 
+  <!-- 循環器 -->
+  <div id="cardio" class="tab-content">
+    <div class="input-area">
+      <div class="score-selector" role="group" aria-label="評価する循環器スコア">
+        <p class="score-selector-title">評価するスコア</p>
+        <div class="score-selector-buttons">
+          <button type="button" class="score-option active" data-cardio-score="wells-pe" aria-pressed="true">
+            <span class="score-option-label">肺塞栓</span>
+            <span class="score-option-name">Wells PE</span>
+          </button>
+          <button type="button" class="score-option" data-cardio-score="cha2ds2-vasc" aria-pressed="false">
+            <span class="score-option-label">AF塞栓リスク</span>
+            <span class="score-option-name">CHA₂DS₂-VASc</span>
+          </button>
+          <button type="button" class="score-option" data-cardio-score="has-bled" aria-pressed="false">
+            <span class="score-option-label">出血リスク</span>
+            <span class="score-option-name">HAS-BLED</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="cardio-form-wells-pe" class="score-form" data-cardio-form="wells-pe" aria-hidden="false">
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-wells-dvt-signs" />
+            DVTの臨床徴候
+          </label>
+          <span>下肢腫脹、深部静脈触診時の疼痛</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-wells-pe-most-likely" />
+            PEが他の診断より考えやすい
+          </label>
+        </div>
+        <div class="input-tile">
+          <label for="cardio-wells-heart-rate">心拍数</label>
+          <input type="number" id="cardio-wells-heart-rate" min="0" step="1" inputmode="numeric" />
+          <span>bpm（100/分超で加点）</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-wells-immobilization-surgery" />
+            手術・不動
+          </label>
+          <span>3日以上の不動、または過去4週間以内の手術</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-wells-previous-dvt-pe" />
+            DVT / PEの既往
+          </label>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-wells-hemoptysis" />
+            喀血
+          </label>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-wells-malignancy" />
+            悪性腫瘍
+          </label>
+          <span>治療中、6か月以内の治療、または緩和治療</span>
+        </div>
+      </div>
+
+      <div id="cardio-form-cha2ds2-vasc" class="score-form" data-cardio-form="cha2ds2-vasc" aria-hidden="true" hidden>
+        <div class="input-tile patient-context-tile">
+          <strong>共通患者情報から自動判定</strong>
+          <p id="cardio-cha-age-summary">年齢：未入力</p>
+          <p id="cardio-cha-gender-summary">性別：未選択</p>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-cha-heart-failure" />
+            心不全 / 左室収縮機能障害
+          </label>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-cha-hypertension" />
+            高血圧
+          </label>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-cha-diabetes" />
+            糖尿病
+          </label>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-cha-stroke-tia-te" />
+            脳梗塞 / TIA / 全身性塞栓症の既往
+          </label>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-cha-vascular-disease" />
+            血管疾患
+          </label>
+          <span>心筋梗塞既往、末梢動脈疾患、大動脈プラーク等</span>
+        </div>
+      </div>
+
+      <div id="cardio-form-has-bled" class="score-form" data-cardio-form="has-bled" aria-hidden="true" hidden>
+        <div class="input-tile patient-context-tile">
+          <strong>共通患者情報から自動判定</strong>
+          <p id="cardio-has-age-summary">年齢：未入力</p>
+        </div>
+        <div class="input-tile">
+          <label for="cardio-has-sbp">収縮期血圧</label>
+          <input type="number" id="cardio-has-sbp" min="0" step="1" inputmode="numeric" />
+          <span>mmHg（160 mmHg超で加点）</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-has-renal" />
+            腎機能異常
+          </label>
+          <span>透析、腎移植、またはCr &gt;200 μmol/L（約2.26 mg/dL）</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-has-liver" />
+            肝機能異常
+          </label>
+          <span>慢性肝疾患 / 肝硬変、またはBil &gt;2×ULNかつAST/ALT/ALP &gt;3×ULN</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-has-stroke" />
+            脳卒中の既往
+          </label>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-has-bleeding" />
+            出血歴 / 出血素因
+          </label>
+          <span>大出血歴、貧血、重度血小板減少など</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-has-labile-inr" />
+            不安定なINR
+          </label>
+          <span>VKA使用時のTTR &lt;60%</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-has-drugs" />
+            出血リスクを高める薬剤
+          </label>
+          <span>抗血小板薬、NSAIDsなど</span>
+        </div>
+        <div class="input-tile">
+          <label>
+            <input type="checkbox" id="cardio-has-alcohol" />
+            過量飲酒
+          </label>
+          <span>例：週14 units超で健康・出血リスクに影響する摂取</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="output-area" id="cardio-output"></div>
+  </div>
+
   <!-- 日付計算（日＋週のみ / 終日含むなし） -->
   <div id="dateCalc" class="tab-content">
     <div class="input-area">
@@ -803,6 +1135,7 @@
   <script src="src/presentation/input-readers/liver-input-reader.js"></script>
   <script src="src/presentation/input-readers/anemia-input-reader.js"></script>
   <script src="src/presentation/input-readers/uro-input-reader.js"></script>
+  <script src="src/presentation/input-readers/cardio-input-reader.js"></script>
   <script src="src/presentation/input-readers/date-calc-input-reader.js"></script>
   <script src="src/presentation/input-readers/gamma-input-reader.js"></script>
   <script src="src/presentation/renderers/message-renderer.js"></script>
@@ -813,6 +1146,10 @@
   <script src="src/domain/anemia/ida-range-table.js"></script>
   <script src="src/domain/anemia/anemia-calculator.js"></script>
   <script src="src/domain/uro/uro-volume-calculator.js"></script>
+  <script src="src/domain/cardio/cardio-score-utils.js"></script>
+  <script src="src/domain/cardio/wells-pe-calculator.js"></script>
+  <script src="src/domain/cardio/cha2ds2-vasc-calculator.js"></script>
+  <script src="src/domain/cardio/has-bled-calculator.js"></script>
   <script src="src/domain/date-calc/date-calculator.js"></script>
   <script src="src/domain/gamma/drug-info.js"></script>
   <script src="src/domain/gamma/gamma-calculator.js"></script>
@@ -822,6 +1159,7 @@
   <script src="src/usecase/liver/run-liver.js"></script>
   <script src="src/usecase/anemia/run-anemia.js"></script>
   <script src="src/usecase/uro/run-uro.js"></script>
+  <script src="src/usecase/cardio/run-cardio.js"></script>
   <script src="src/usecase/date-calc/run-date-calc.js"></script>
   <script src="src/usecase/gamma/run-gamma.js"></script>
   <script src="src/presentation/renderers/renal-renderer.js"></script>
@@ -830,6 +1168,7 @@
   <script src="src/presentation/renderers/liver-renderer.js"></script>
   <script src="src/presentation/renderers/anemia-renderer.js"></script>
   <script src="src/presentation/renderers/uro-renderer.js"></script>
+  <script src="src/presentation/renderers/cardio-renderer.js"></script>
   <script src="src/presentation/renderers/date-calc-renderer.js"></script>
   <script src="src/presentation/renderers/gamma-renderer.js"></script>
   <script src="src/presentation/app-shell.js"></script>
@@ -857,6 +1196,12 @@
       var input = window.MedcalcInputReaders.readUroInput();
       var viewModel = window.MedcalcUsecase.runUro(input);
       window.MedcalcRenderers.renderUro(viewModel);
+    }
+
+    function calculateCardio() {
+      var input = window.MedcalcInputReaders.readCardioInput();
+      var viewModel = window.MedcalcUsecase.runCardio(input);
+      window.MedcalcRenderers.renderCardio(viewModel);
     }
 
     function calculateGlucose() {
@@ -898,6 +1243,7 @@ function calculateLipid() {
       liver: calculateLiver,
       anemia: calculateAnemia,
       uro: calculateUro,
+      cardio: calculateCardio,
       dateCalc: calculateDateCalc,
       gamma: calculateGamma
     });
