@@ -72,16 +72,40 @@
         message: '炎症なし。フェリチン値はそのまま解釈可能です'
       }
     },
-    generalIronStatus: {
-      directDeficiencyCodes: ['FERRITIN_LT15', 'FERRITIN_LT30'],
-      corroborativeDeficiencyCodes: ['FERRITIN_LT45_AGA', 'FERRITIN_LT70_WITH_INFLAMMATION'],
-      minOtherIronSourcesForCorroboration: 1,
-      minOtherIronSourcesWithoutFerritin: 2,
-      replete: {
-        tsatMinInclusive: 20,
-        tsatMaxExclusive: 45,
-        ferritinMinByInflammation: { absent: 45, present: 70 },
-        ferritinMaxInclusiveBySex: { female: 200, male: 300 }
+    ironStatus: {
+      storageContexts: {
+        general: {
+          deficiencyBelow: 30,
+          description: '炎症なし・CKD特別基準なし'
+        },
+        inflammation: {
+          deficiencyBelow: 70,
+          description: '炎症あり'
+        },
+        esaHifPh: {
+          deficiencyBelow: 100,
+          description: 'ESA/HIF-PH阻害薬投与下'
+        },
+        nonDialysisCkd: {
+          deficiencyBelow: 100,
+          description: '非透析CKD（G3b以降）'
+        },
+        dialysis: {
+          deficiencyBelow: 200,
+          description: '透析中'
+        }
+      },
+      storageIncreaseAbove: 300,
+      circulatingIronRanges: [
+        { max: 20, classification: 'low', code: 'CIRCULATING_IRON_AVAILABILITY_LOW', direction: 'modifier', weight: 0, confidence: 'strong', message: '循環鉄利用率：低値（TSAT 20％未満）' },
+        { min: 20, max: 45, classification: 'normal', code: 'CIRCULATING_IRON_AVAILABILITY_NORMAL', direction: 'modifier', weight: 0, confidence: 'strong', message: '循環鉄利用率：通常（TSAT 20％以上45％未満）' },
+        { min: 45, classification: 'high', code: 'CIRCULATING_IRON_AVAILABILITY_HIGH', direction: 'modifier', weight: 0, confidence: 'strong', message: '循環鉄利用率：高値（TSAT 45％以上）' }
+      ],
+      storageAtoms: {
+        deficient: { target: 'IRON_STATUS', code: 'STORAGE_IRON_DEFICIENT', direction: 'modifier', weight: 0, confidence: 'strong' },
+        replete: { target: 'IRON_STATUS', code: 'STORAGE_IRON_REPLETE', direction: 'modifier', weight: 0, confidence: 'moderate' },
+        increased: { target: 'IRON_STATUS', code: 'STORAGE_IRON_INCREASED', direction: 'modifier', weight: 0, confidence: 'moderate' },
+        indeterminate: { target: 'IRON_STATUS', code: 'STORAGE_IRON_INDETERMINATE', direction: 'modifier', weight: 0, confidence: 'weak' }
       }
     },
     ferritinWithInflammation: {
@@ -100,98 +124,6 @@
         requiresCorroboration: true,
         guideline: 'WHO',
         message: '炎症がありフェリチン70 ng/mL未満です。炎症によるフェリチン上昇を考慮しても鉄欠乏を示唆します'
-      }
-    },
-    ferritinOverload: [
-      { sex: 'female', requiredContext: 'INFLAMMATION_ABSENT', operator: 'gt', value: 200 },
-      { sex: 'male', requiredContext: 'INFLAMMATION_ABSENT', operator: 'gt', value: 300 }
-    ],
-    ferritinOverloadAtom: {
-      target: 'IRON_OVERLOAD',
-      code: 'FERRITIN_HIGH_FOR_SEX',
-      direction: 'support',
-      weight: 2,
-      confidence: 'moderate',
-      evidenceGroup: 'iron_metabolism',
-      diagnosticRole: 'screening_alert',
-      requiresCorroboration: true,
-      recommendedCorroboration: ['TSAT_HIGH'],
-      guideline: 'EASL',
-      message: '炎症を認めない状態でフェリチンが性別基準を超えています。鉄過剰を疑い、TSATなどを確認してください'
-    },
-    esaIronStatus: [
-      {
-        classification: 'iron_deficient',
-        match: 'any',
-        conditions: [
-          { source: 'tsat', operator: 'lt', value: 20 },
-          { source: 'ferritin', operator: 'lt', value: 100 }
-        ],
-        atom: {
-          target: 'ESA_IRON_STATUS',
-          code: 'ESA_IRON_DEFICIENT',
-          direction: 'modifier',
-          weight: 0,
-          confidence: 'strong',
-          role: 'therapy_context',
-          guideline: 'JSN_HIF_PH_RECOMMENDATION',
-          message: '鉄欠乏：TSAT 20％未満またはフェリチン100 ng/mL未満です'
-        }
-      },
-      {
-        classification: 'iron_overload_caution',
-        match: 'all',
-        conditions: [
-          { source: 'tsat', operator: 'gt', value: 20 },
-          { source: 'ferritin', operator: 'gte', value: 300 }
-        ],
-        atom: {
-          target: 'ESA_IRON_STATUS',
-          code: 'ESA_IRON_OVERLOAD_CAUTION',
-          direction: 'modifier',
-          weight: 0,
-          confidence: 'strong',
-          role: 'therapy_context',
-          message: '鉄過剰警戒：TSAT 20％超かつフェリチン300 ng/mL以上です'
-        }
-      },
-      {
-        classification: 'iron_replete',
-        match: 'all',
-        conditions: [
-          { source: 'tsat', operator: 'gt', value: 20 },
-          { source: 'ferritin', operator: 'gte', value: 100 },
-          { source: 'ferritin', operator: 'lt', value: 300 }
-        ],
-        atom: {
-          target: 'ESA_IRON_STATUS',
-          code: 'ESA_IRON_REPLETE',
-          direction: 'modifier',
-          weight: 0,
-          confidence: 'strong',
-          role: 'therapy_context',
-          message: '鉄充足：TSAT 20％超かつフェリチン100 ng/mL以上300 ng/mL未満です'
-        }
-      }
-    ],
-    esaIronStatusFallbackAtoms: {
-      insufficient: {
-        target: 'ESA_IRON_STATUS',
-        code: 'ESA_IRON_STATUS_INSUFFICIENT',
-        direction: 'modifier',
-        weight: 0,
-        confidence: 'weak',
-        role: 'therapy_context',
-        message: '鉄状態判定不能：TSATとフェリチンの追加確認が必要です'
-      },
-      borderline: {
-        target: 'ESA_IRON_STATUS',
-        code: 'ESA_IRON_STATUS_BORDERLINE',
-        direction: 'modifier',
-        weight: 0,
-        confidence: 'weak',
-        role: 'therapy_context',
-        message: '鉄状態判定保留：TSATが20％ちょうどのため、指定基準では鉄状態を確定できません'
       }
     }
   };

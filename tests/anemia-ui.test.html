@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Anemia UI integration tests</title>
+  <style>iframe { width: 390px; height: 800px; border: 0; }</style>
+</head>
+<body data-test-result="running">
+  <pre id="results">Running...</pre>
+  <iframe id="app" src="../Medcalc4.html" title="MediLaboHelper anemia test target"></iframe>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var lines = [];
+      var passed = 0;
+      var failed = 0;
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message);
+      }
+
+      function test(name, callback) {
+        try {
+          callback();
+          passed += 1;
+          lines.push('PASS ' + name);
+        } catch (error) {
+          failed += 1;
+          lines.push('FAIL ' + name + '\n  ' + error.message);
+        }
+      }
+
+      function setValue(doc, id, value, eventName) {
+        var element = doc.getElementById(id);
+        element.value = value;
+        element.dispatchEvent(new Event(eventName || (element.tagName === 'SELECT' ? 'change' : 'input'), { bubbles: true }));
+      }
+
+      document.getElementById('app').addEventListener('load', function () {
+        try {
+          var doc = this.contentDocument;
+          doc.querySelector('[data-tab="anemia"]').click();
+          setValue(doc, 'gender', 'male');
+          setValue(doc, 'gfrAnemia', 'none');
+          setValue(doc, 'esaTherapy', 'no');
+          setValue(doc, 'inflammationAnemia', 'absent');
+          setValue(doc, 'hb', '12');
+          setValue(doc, 'ferritin', '20');
+          setValue(doc, 'tsat', '19');
+
+          test('iron status is rendered as one unified section', function () {
+            var text = doc.getElementById('anemia-output').textContent;
+            assert(text.indexOf('鉄状態：') !== -1, 'unified iron-status heading is missing');
+            assert(text.indexOf('全身性・絶対的鉄欠乏') !== -1, 'integrated decision is missing');
+            assert(text.indexOf('一般鉄状態：') === -1, 'legacy general-iron heading remains');
+            assert(text.indexOf('ESA/HIF-PH阻害剤投与時の鉄状態：') === -1, 'legacy ESA heading remains');
+          });
+
+          test('details contain intermediate storage and circulating evidence', function () {
+            var text = doc.querySelector('#anemia-output details').textContent;
+            assert(text.indexOf('貯蔵鉄：欠乏') !== -1, 'storage-iron evidence is missing');
+            assert(text.indexOf('循環鉄利用率：低値') !== -1, 'circulating-availability evidence is missing');
+            assert(text.indexOf('鉄代謝判定：全身性・絶対的鉄欠乏') !== -1, 'integrated evidence is missing');
+          });
+
+          test('ferritin alone shows intermediate evidence without a final iron-status line', function () {
+            setValue(doc, 'tsat', '');
+            var out = doc.getElementById('anemia-output');
+            assert(out.textContent.indexOf('貯蔵鉄：欠乏') !== -1, 'storage-iron evidence is missing');
+            var paragraphs = out.querySelectorAll('p');
+            var hasIronStatusHeading = false;
+            for (var i = 0; i < paragraphs.length; i += 1) {
+              if (paragraphs[i].textContent.indexOf('鉄状態：') === 0) hasIronStatusHeading = true;
+            }
+            assert(!hasIronStatusHeading, 'final iron-status line should not be rendered');
+          });
+
+          test('GFR selector has a distinct no-CKD option', function () {
+            var option = doc.querySelector('#gfrAnemia option[value="none"]');
+            assert(!!option, 'no-CKD option is missing');
+          });
+        } catch (error) {
+          failed += 1;
+          lines.push('FAIL setup\n  ' + error.message);
+        }
+
+        lines.push('');
+        lines.push('Passed: ' + passed + ', Failed: ' + failed);
+        document.getElementById('results').textContent = lines.join('\n');
+        document.body.setAttribute('data-test-result', failed ? 'failed' : 'passed');
+      });
+    })();
+  </script>
+</body>
+</html>

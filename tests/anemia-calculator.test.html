@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Anemia calculator tests</title>
+</head>
+<body data-test-result="running">
+  <pre id="results"></pre>
+
+  <script src="../src/domain/anemia/ida-range-table.js"></script>
+  <script src="../src/domain/anemia/anemia-calculator.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var output = document.getElementById('results');
+      var passed = 0;
+      var failed = 0;
+      var lines = [];
+
+      function assertEqual(actual, expected, message) {
+        if (actual !== expected) {
+          throw new Error(message + ': expected ' + expected + ', received ' + actual);
+        }
+      }
+
+      function test(name, callback) {
+        try {
+          callback();
+          passed += 1;
+          lines.push('PASS ' + name);
+        } catch (error) {
+          failed += 1;
+          lines.push('FAIL ' + name + '\n  ' + error.message);
+        }
+      }
+
+      function calculate(overrides) {
+        var input = {
+          sex: 'male',
+          hb: 12,
+          gfrStage: 'none',
+          esaTherapy: 'no',
+          inflammationStatus: 'absent'
+        };
+        Object.keys(overrides || {}).forEach(function (key) { input[key] = overrides[key]; });
+        return window.MedcalcDomain.calculateAnemia(input);
+      }
+
+      function atomBySource(result, source) {
+        var atoms = result.ironStatusEvidenceAtoms || [];
+        for (var i = 0; i < atoms.length; i += 1) {
+          if (atoms[i].source === source) return atoms[i];
+        }
+        return null;
+      }
+
+      test('general: ferritin below 30 and TSAT below 20 is systemic iron deficiency', function () {
+        var result = calculate({ ferritin: 29, tsatInput: 19 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'deficient', 'storage iron');
+        assertEqual(atomBySource(result, 'tsat_status').classification, 'low', 'circulating availability');
+        assertEqual(result.ironStatusDecision.code, 'SYSTEMIC_ABSOLUTE_IRON_DEFICIENCY', 'integrated decision');
+      });
+
+      test('general: ferritin 30 and TSAT 20 are replete and normal', function () {
+        var result = calculate({ ferritin: 30, tsatInput: 20 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'replete', 'storage iron');
+        assertEqual(atomBySource(result, 'tsat_status').classification, 'normal', 'circulating availability');
+        assertEqual(result.ironStatusDecision.code, 'IRON_REPLETE', 'integrated decision');
+      });
+
+      test('G3a does not use the non-dialysis CKD cutoff', function () {
+        var result = calculate({ gfrStage: 'g3a', ferritin: 99, tsatInput: 20 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'replete', 'storage iron');
+      });
+
+      test('G3b uses ferritin below 100 as the non-dialysis CKD cutoff', function () {
+        var below = calculate({ gfrStage: 'g3b', ferritin: 99, tsatInput: 20 });
+        var boundary = calculate({ gfrStage: 'g3b', ferritin: 100, tsatInput: 20 });
+        assertEqual(atomBySource(below, 'ferritin_status').classification, 'deficient', 'below 100');
+        assertEqual(atomBySource(boundary, 'ferritin_status').classification, 'replete', 'at 100');
+      });
+
+      test('dialysis uses ferritin below 200 and includes 200 as replete', function () {
+        var below = calculate({ gfrStage: 'dialysis', ferritin: 199, tsatInput: 20 });
+        var boundary = calculate({ gfrStage: 'dialysis', ferritin: 200, tsatInput: 20 });
+        assertEqual(atomBySource(below, 'ferritin_status').classification, 'deficient', 'below 200');
+        assertEqual(atomBySource(boundary, 'ferritin_status').classification, 'replete', 'at 200');
+      });
+
+      test('ESA/HIF-PH therapy uses ferritin below 100 outside G3b or dialysis', function () {
+        var result = calculate({ gfrStage: 'g3a', esaTherapy: 'yes', ferritin: 99, tsatInput: 20 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'deficient', 'storage iron');
+        assertEqual(result.evidenceAtoms.some(function (atom) { return atom.target === 'ESA_IRON_STATUS'; }), false, 'legacy ESA atom');
+      });
+
+      test('ferritin above 300 and TSAT 45 is iron overload', function () {
+        var result = calculate({ ferritin: 301, tsatInput: 45 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'increased', 'storage iron');
+        assertEqual(atomBySource(result, 'tsat_status').classification, 'high', 'circulating availability');
+        assertEqual(result.ironStatusDecision.code, 'IRON_OVERLOAD', 'integrated decision');
+      });
+
+      test('ferritin 300 is still replete while TSAT 45 is high', function () {
+        var result = calculate({ ferritin: 300, tsatInput: 45 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'replete', 'storage iron');
+        assertEqual(atomBySource(result, 'tsat_status').classification, 'high', 'circulating availability');
+        assertEqual(result.ironStatusDecision.code, 'HIGH_CIRCULATING_IRON_AVAILABILITY', 'integrated decision');
+      });
+
+      test('inflammation prevents increased-storage classification above ferritin 300', function () {
+        var result = calculate({ inflammationStatus: 'present', ferritin: 301, tsatInput: 45 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'indeterminate', 'storage iron');
+        assertEqual(result.ironStatusDecision.code, 'IRON_METABOLISM_INDETERMINATE', 'integrated decision');
+      });
+
+      test('inflammation uses below 70 as deficient and includes 70 as replete', function () {
+        var below = calculate({ inflammationStatus: 'present', ferritin: 69, tsatInput: 20 });
+        var boundary = calculate({ inflammationStatus: 'present', ferritin: 70, tsatInput: 20 });
+        assertEqual(atomBySource(below, 'ferritin_status').classification, 'deficient', 'below 70');
+        assertEqual(atomBySource(boundary, 'ferritin_status').classification, 'replete', 'at 70');
+      });
+
+      test('unselected GFR keeps storage iron and integrated metabolism indeterminate', function () {
+        var result = calculate({ gfrStage: '', ferritin: 20, tsatInput: 19 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'indeterminate', 'storage iron');
+        assertEqual(result.ironStatusDecision.code, 'IRON_METABOLISM_INDETERMINATE', 'integrated decision');
+      });
+
+      test('ferritin alone creates only a storage-iron atom and no integrated decision', function () {
+        var result = calculate({ ferritin: 20 });
+        assertEqual(atomBySource(result, 'ferritin_status').classification, 'deficient', 'storage iron');
+        assertEqual(atomBySource(result, 'tsat_status'), null, 'circulating availability');
+        assertEqual(result.ironStatusDecision, null, 'integrated decision');
+      });
+
+      test('TSAT alone creates only a circulating-availability atom and no integrated decision', function () {
+        var result = calculate({ tsatInput: 19 });
+        assertEqual(atomBySource(result, 'ferritin_status'), null, 'storage iron');
+        assertEqual(atomBySource(result, 'tsat_status').classification, 'low', 'circulating availability');
+        assertEqual(result.ironStatusDecision, null, 'integrated decision');
+      });
+
+      test('calculated TSAT participates in the integrated iron-metabolism decision', function () {
+        var result = calculate({ ferritin: 20, serumIron: 20, tibc: 200 });
+        assertEqual(atomBySource(result, 'tsat_status').classification, 'low', 'circulating availability');
+        assertEqual(result.ironStatusDecision.code, 'SYSTEMIC_ABSOLUTE_IRON_DEFICIENCY', 'integrated decision');
+      });
+
+      test('TIBC and UIBC evidence does not change the new iron-status decision', function () {
+        var result = calculate({ ferritin: 30, tsatInput: 20, tibc: 400, uibc: 350 });
+        assertEqual(result.ironStatusDecision.code, 'IRON_REPLETE', 'integrated decision');
+        assertEqual(result.diseaseScore.otherIronSupportingSourceCount, 2, 'IDA supporting sources');
+      });
+
+      test('all nine storage and circulating-availability combinations are mapped', function () {
+        var cases = [
+          { ferritin: 20, tsat: 19, code: 'SYSTEMIC_ABSOLUTE_IRON_DEFICIENCY' },
+          { ferritin: 20, tsat: 20, code: 'STORAGE_IRON_DEFICIENCY_WITH_PRESERVED_AVAILABILITY' },
+          { ferritin: 20, tsat: 45, code: 'DISCORDANT_LOW_STORAGE_HIGH_AVAILABILITY' },
+          { ferritin: 30, tsat: 19, code: 'IRON_RESTRICTED_ERYTHROPOIESIS' },
+          { ferritin: 30, tsat: 20, code: 'IRON_REPLETE' },
+          { ferritin: 30, tsat: 45, code: 'HIGH_CIRCULATING_IRON_AVAILABILITY' },
+          { ferritin: 301, tsat: 19, code: 'IRON_RESTRICTED_ERYTHROPOIESIS_WITH_INCREASED_STORAGE' },
+          { ferritin: 301, tsat: 20, code: 'INCREASED_IRON_STORAGE' },
+          { ferritin: 301, tsat: 45, code: 'IRON_OVERLOAD' }
+        ];
+        cases.forEach(function (entry) {
+          var result = calculate({ ferritin: entry.ferritin, tsatInput: entry.tsat });
+          assertEqual(result.ironStatusDecision.code, entry.code, entry.ferritin + '/' + entry.tsat);
+        });
+      });
+
+      test('ESA/HIF-PH context is included in the unified decision message', function () {
+        var result = calculate({ gfrStage: 'g3a', esaTherapy: 'yes', ferritin: 99, tsatInput: 19 });
+        assertEqual(result.ironStatusDecision.message.indexOf('ESA/HIF-PH阻害薬投与下では、'), 0, 'therapy prefix');
+      });
+
+      lines.push('');
+      lines.push('Passed: ' + passed + ', Failed: ' + failed);
+      output.textContent = lines.join('\n');
+      document.body.setAttribute('data-test-result', failed ? 'failed' : 'passed');
+    })();
+  </script>
+</body>
+</html>

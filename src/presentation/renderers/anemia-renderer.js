@@ -20,14 +20,20 @@
   }
 
   function formatEvidenceDetails(viewModel) {
-    var atoms = viewModel && viewModel.evidenceAtoms ? viewModel.evidenceAtoms : [];
+    var diagnosticAtoms = viewModel && viewModel.evidenceAtoms ? viewModel.evidenceAtoms : [];
+    var ironStatusAtoms = viewModel && viewModel.ironStatusEvidenceAtoms ? viewModel.ironStatusEvidenceAtoms : [];
+    var atoms = diagnosticAtoms.filter(function (atom) {
+      return atom.source !== 'ferritin' && atom.source !== 'tsat';
+    }).concat(ironStatusAtoms);
     if (!atoms.length) return '';
 
     var detailItems = atoms.map(function (atom) {
-      return '<li>' + atom.message + '</li>';
+      var prefix = atom.source === 'iron_metabolism' ? '鉄代謝判定：' : '';
+      return '<li>' + prefix + atom.message + '</li>';
     });
     var flags = viewModel.diseaseScore && viewModel.diseaseScore.flags ? viewModel.diseaseScore.flags : [];
-    if (flags.indexOf('INFLAMMATION_PRESENT') !== -1) {
+    var hasInflammationAtom = diagnosticAtoms.some(function (atom) { return atom.source === 'inflammation'; });
+    if (flags.indexOf('INFLAMMATION_PRESENT') !== -1 && !hasInflammationAtom) {
       detailItems.push('<li>炎症ありのため、フェリチンは急性期反応の影響を考慮して解釈してください</li>');
     }
     if (flags.indexOf('CONFLICTING_EVIDENCE') !== -1) {
@@ -46,14 +52,12 @@
     var mcvLine = formatCalculatedValue('MCV', 'fL', calculatedValues.mcvInput, calculatedValues.mcvCalculated);
     var classification = formatMcvClassification(calculatedValues.mcvForClassification);
     var decision = viewModel && viewModel.idaDecision && viewModel.evidenceAtoms && viewModel.evidenceAtoms.length ? viewModel.idaDecision.message : '';
-    var generalIronStatusDecision = viewModel && viewModel.generalIronStatusDecision ? viewModel.generalIronStatusDecision.message : '';
-    var esaIronStatusDecision = viewModel && viewModel.esaIronStatusDecision ? viewModel.esaIronStatusDecision.message : '';
+    var ironStatusDecision = viewModel && viewModel.ironStatusDecision ? viewModel.ironStatusDecision.message : '';
 
     if (tsatLine) lines.push('<p>' + tsatLine + '</p>');
     if (mcvLine) lines.push('<p>' + mcvLine + '</p>');
     if (decision) lines.push('<p><b>鉄欠乏性貧血判定：</b>' + decision + '</p>');
-    if (generalIronStatusDecision) lines.push('<p><b>一般鉄状態：</b>' + generalIronStatusDecision + '</p>');
-    if (esaIronStatusDecision) lines.push('<p><b>ESA/HIF-PH阻害剤投与時の鉄状態：</b>' + esaIronStatusDecision + '</p>');
+    if (ironStatusDecision) lines.push('<p><b>鉄状態：</b>' + ironStatusDecision + '</p>');
     if (classification) lines.push('<p><b>' + classification + '</b></p>');
     lines.push(formatEvidenceDetails(viewModel));
     out.innerHTML = lines.join('');

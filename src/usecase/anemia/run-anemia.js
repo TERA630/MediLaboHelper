@@ -5,11 +5,10 @@
     return {
       messages: domainResult && domainResult.messages ? domainResult.messages.slice() : [],
       evidenceAtoms: domainResult && domainResult.evidenceAtoms ? domainResult.evidenceAtoms.slice() : [],
+      ironStatusEvidenceAtoms: domainResult && domainResult.ironStatusEvidenceAtoms ? domainResult.ironStatusEvidenceAtoms.slice() : [],
       diseaseScore: domainResult ? domainResult.diseaseScore : null,
       idaDecision: domainResult ? domainResult.idaDecision : null,
-      ironOverloadDecision: domainResult ? domainResult.ironOverloadDecision : null,
-      generalIronStatusDecision: domainResult ? domainResult.generalIronStatusDecision : null,
-      esaIronStatusDecision: domainResult ? domainResult.esaIronStatusDecision : null,
+      ironStatusDecision: domainResult ? domainResult.ironStatusDecision : null,
       classifications: domainResult && domainResult.classifications ? domainResult.classifications : {},
       clinicalContext: domainResult && domainResult.clinicalContext ? domainResult.clinicalContext : null,
       calculatedValues: domainResult ? domainResult.calculatedValues : null

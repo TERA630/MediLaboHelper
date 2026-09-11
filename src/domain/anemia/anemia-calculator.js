@@ -5,6 +5,7 @@
   var IRON_DEFICIENCY_TARGET = 'IRON_DEFICIENCY';
   var IDA_SOURCES = ['ferritin', 'tsat', 'tibc', 'uibc', 'mcv', 'rdw', 'stfr_index'];
   var OTHER_IRON_METABOLISM_SOURCES = ['tsat', 'tibc', 'uibc', 'stfr_index'];
+  var NON_DIALYSIS_CKD_STAGES = ['g3b', 'g4g5'];
   var IDA_DECISION_TABLE = [
     {
       label: 'IDA_DIAGNOSTIC',
@@ -102,51 +103,6 @@
     return [];
   }
 
-  function matchesFerritinOverloadRule(value, sex, inflammationStatus, rule) {
-    if (!isNumber(value) || !rule || rule.sex !== sex) return false;
-    if (rule.requiredContext === 'INFLAMMATION_ABSENT' && inflammationStatus !== 'absent') return false;
-    return rule.operator === 'gt' && value > rule.value;
-  }
-
-  function matchesNumericCondition(condition, values) {
-    var value = values[condition.source];
-    if (!isNumber(value)) return false;
-    if (condition.operator === 'lt') return value < condition.value;
-    if (condition.operator === 'gt') return value > condition.value;
-    if (condition.operator === 'gte') return value >= condition.value;
-    if (condition.operator === 'lte') return value <= condition.value;
-    return false;
-  }
-
-  function matchesCompositeRule(rule, values) {
-    var conditions = rule.conditions || [];
-    if (rule.match === 'any') {
-      return conditions.some(function (condition) { return matchesNumericCondition(condition, values); });
-    }
-    return conditions.length > 0 && conditions.every(function (condition) { return matchesNumericCondition(condition, values); });
-  }
-
-  function buildEsaIronStatusAtom(esaTherapy, values) {
-    if (esaTherapy !== 'yes') return null;
-    var evidenceRules = global.MedcalcAnemiaEvidenceRules || {};
-    var rules = evidenceRules.esaIronStatus || [];
-    for (var i = 0; i < rules.length; i += 1) {
-      if (matchesCompositeRule(rules[i], values)) {
-        var atom = createEvidenceAtom('esa_iron_status', rules[i].atom);
-        atom.classification = rules[i].classification;
-        return atom;
-      }
-    }
-
-    var fallbackAtoms = evidenceRules.esaIronStatusFallbackAtoms || {};
-    var isBoundary = isNumber(values.tsat) && values.tsat === 20 && isNumber(values.ferritin) && values.ferritin >= 100;
-    var fallback = isBoundary ? fallbackAtoms.borderline : fallbackAtoms.insufficient;
-    if (!fallback) return null;
-    var fallbackAtom = createEvidenceAtom('esa_iron_status', fallback);
-    fallbackAtom.classification = isBoundary ? 'borderline' : 'insufficient_data';
-    return fallbackAtom;
-  }
-
   function buildInflammationAtom(inflammationStatus) {
     var evidenceRules = global.MedcalcAnemiaEvidenceRules || {};
     var definitions = evidenceRules.inflammationStatus || {};
@@ -154,19 +110,9 @@
     return definition ? createEvidenceAtom('inflammation', definition) : null;
   }
 
-  function buildFerritinAtom(value, sex, inflammationStatus, finding) {
+  function buildFerritinAtom(value, inflammationStatus, finding) {
     if (!finding) return null;
     var rules = global.MedcalcAnemiaEvidenceRules || {};
-    var overloadRules = rules.ferritinOverload || [];
-    for (var i = 0; i < overloadRules.length; i += 1) {
-      if (matchesFerritinOverloadRule(value, sex, inflammationStatus, overloadRules[i])) {
-        var overloadAtom = createEvidenceAtom('ferritin', rules.ferritinOverloadAtom);
-        overloadAtom.classification = sex === 'female' ? 'high_for_female' : 'high_for_male';
-        overloadAtom.threshold = overloadRules[i].value;
-        return overloadAtom;
-      }
-    }
-
     var inflammationRule = rules.ferritinWithInflammation;
     if (inflammationStatus === 'present' && inflammationRule && finding.classification === inflammationRule.rangeClassification) {
       var inflammationAtom = createEvidenceAtom('ferritin', inflammationRule.atom);
@@ -180,7 +126,7 @@
     return atom;
   }
 
-  function buildEvidenceAtoms(values, sex, hb, esaTherapy, selectedInflammationStatus) {
+  function buildEvidenceAtoms(values, sex, hb, selectedInflammationStatus) {
     var table = global.MedcalcAnemiaRangeTable || {};
     var atoms = [];
     var classifications = {};
@@ -201,7 +147,7 @@
 
     var ferritinFinding = table.ferritin ? classifyByRange(values.ferritin, table.ferritin.ranges, sex) : null;
     if (ferritinFinding) {
-      var ferritinAtom = buildFerritinAtom(values.ferritin, sex, inflammationStatus, ferritinFinding);
+      var ferritinAtom = buildFerritinAtom(values.ferritin, inflammationStatus, ferritinFinding);
       classifications.ferritin = ferritinAtom.classification || ferritinFinding.classification;
       atoms.push(ferritinAtom);
     }
@@ -214,17 +160,189 @@
       atoms.push(createEvidenceAtom(source, finding));
     });
 
-    var esaIronStatusAtom = buildEsaIronStatusAtom(esaTherapy, values);
-    if (esaIronStatusAtom) {
-      classifications.esa_iron_status = esaIronStatusAtom.classification;
-      atoms.push(esaIronStatusAtom);
-    }
-
     return {
       atoms: atoms,
       classifications: classifications,
       contextCodes: contextCodes,
       inflammationStatus: inflammationStatus
+    };
+  }
+
+  function formatMeasuredValue(value) {
+    return Number(value.toFixed(1)).toString();
+  }
+
+  function createStorageIronAtom(classification, message, contextKey, threshold) {
+    var evidenceRules = global.MedcalcAnemiaEvidenceRules || {};
+    var ironStatusRules = evidenceRules.ironStatus || {};
+    var definition = ironStatusRules.storageAtoms && ironStatusRules.storageAtoms[classification];
+    if (!definition) return null;
+    var atom = createEvidenceAtom('ferritin_status', definition);
+    atom.classification = classification;
+    atom.context = contextKey || 'unknown';
+    if (isNumber(threshold)) atom.threshold = threshold;
+    atom.message = message;
+    return atom;
+  }
+
+  function selectStorageContext(gfrStage, esaTherapy, inflammationStatus, contexts) {
+    if (!gfrStage) return { reason: 'GFR区分が未選択です' };
+    if (gfrStage === 'dialysis') return { key: 'dialysis', definition: contexts.dialysis };
+    if (NON_DIALYSIS_CKD_STAGES.indexOf(gfrStage) !== -1) {
+      return { key: 'nonDialysisCkd', definition: contexts.nonDialysisCkd };
+    }
+    if (esaTherapy === 'yes') return { key: 'esaHifPh', definition: contexts.esaHifPh };
+    if (esaTherapy !== 'no') return { reason: 'ESA/HIF-PH阻害薬の投与状況が未選択です' };
+    if (inflammationStatus === 'present') return { key: 'inflammation', definition: contexts.inflammation };
+    if (inflammationStatus === 'absent') return { key: 'general', definition: contexts.general };
+    return { reason: '炎症の有無が未選択です' };
+  }
+
+  function buildStorageIronAtom(ferritin, gfrStage, esaTherapy, inflammationStatus) {
+    if (!isNumber(ferritin)) return null;
+    var evidenceRules = global.MedcalcAnemiaEvidenceRules || {};
+    var rules = evidenceRules.ironStatus || {};
+    var contexts = rules.storageContexts || {};
+    var selected = selectStorageContext(gfrStage, esaTherapy, inflammationStatus, contexts);
+    var ferritinText = formatMeasuredValue(ferritin) + ' ng/mL';
+
+    if (!selected.definition) {
+      return createStorageIronAtom(
+        'indeterminate',
+        '貯蔵鉄：判定保留（フェリチン ' + ferritinText + '。' + selected.reason + '）',
+        'unknown'
+      );
+    }
+
+    if (ferritin > rules.storageIncreaseAbove) {
+      if (inflammationStatus === 'present') {
+        return createStorageIronAtom(
+          'indeterminate',
+          '貯蔵鉄：判定不能（フェリチン ' + ferritinText + 'と高値ですが、炎症の影響があるため貯蔵鉄増加とは判定しません）',
+          selected.key,
+          rules.storageIncreaseAbove
+        );
+      }
+      if (inflammationStatus !== 'absent') {
+        return createStorageIronAtom(
+          'indeterminate',
+          '貯蔵鉄：判定保留（フェリチン ' + ferritinText + 'と高値ですが、炎症の有無が未選択です）',
+          selected.key,
+          rules.storageIncreaseAbove
+        );
+      }
+      return createStorageIronAtom(
+        'increased',
+        '貯蔵鉄：増加（フェリチン ' + ferritinText + '、300 ng/mL超。フェリチン単独では鉄過剰とは判定しません）',
+        selected.key,
+        rules.storageIncreaseAbove
+      );
+    }
+
+    var threshold = selected.definition.deficiencyBelow;
+    var finding = classifyByRange(ferritin, [
+      { max: threshold, classification: 'deficient' },
+      { min: threshold, classification: 'replete' }
+    ]);
+    if (!finding) return null;
+    if (finding.classification === 'deficient') {
+      return createStorageIronAtom(
+        'deficient',
+        '貯蔵鉄：欠乏（フェリチン ' + ferritinText + '。' + selected.definition.description + 'の基準で' + threshold + ' ng/mL未満）',
+        selected.key,
+        threshold
+      );
+    }
+    return createStorageIronAtom(
+      'replete',
+      '貯蔵鉄：充足（フェリチン ' + ferritinText + '。' + selected.definition.description + 'の基準を満たします）',
+      selected.key,
+      threshold
+    );
+  }
+
+  function buildCirculatingIronAtom(tsat) {
+    if (!isNumber(tsat)) return null;
+    var evidenceRules = global.MedcalcAnemiaEvidenceRules || {};
+    var rules = evidenceRules.ironStatus || {};
+    var finding = classifyByRange(tsat, rules.circulatingIronRanges || []);
+    if (!finding) return null;
+    var atom = createEvidenceAtom('tsat_status', finding);
+    atom.target = 'IRON_STATUS';
+    atom.classification = finding.classification;
+    var displayByClassification = {
+      low: { label: '低値', criterion: '20％未満' },
+      normal: { label: '通常', criterion: '20％以上45％未満' },
+      high: { label: '高値', criterion: '45％以上' }
+    };
+    var display = displayByClassification[finding.classification];
+    if (display) {
+      atom.message = '循環鉄利用率：' + display.label + '（TSAT ' + formatMeasuredValue(tsat) + '％、' + display.criterion + '）';
+    }
+    return atom;
+  }
+
+  var IRON_METABOLISM_DECISIONS = {
+    deficient: {
+      low: { code: 'SYSTEMIC_ABSOLUTE_IRON_DEFICIENCY', label: 'SYSTEMIC_IRON_DEFICIENCY', message: '全身性・絶対的鉄欠乏です（貯蔵鉄欠乏かつ循環鉄利用率低値）' },
+      normal: { code: 'STORAGE_IRON_DEFICIENCY_WITH_PRESERVED_AVAILABILITY', label: 'STORAGE_IRON_DEFICIENCY', message: '貯蔵鉄欠乏ですが、循環鉄利用率は保たれています' },
+      high: { code: 'DISCORDANT_LOW_STORAGE_HIGH_AVAILABILITY', label: 'DISCORDANT_IRON_STATUS', message: '不自然な鉄状態です（貯蔵鉄欠乏かつ循環鉄利用率高値）。鉄剤投与直後やトランスフェリン低下などを確認してください' }
+    },
+    replete: {
+      low: { code: 'IRON_RESTRICTED_ERYTHROPOIESIS', label: 'IRON_RESTRICTED_ERYTHROPOIESIS', message: '鉄利用制限／iron-restricted erythropoiesisパターンです（貯蔵鉄充足かつ循環鉄利用率低値）' },
+      normal: { code: 'IRON_REPLETE', label: 'IRON_REPLETE', message: '鉄充足状態です（貯蔵鉄充足かつ循環鉄利用率通常）' },
+      high: { code: 'HIGH_CIRCULATING_IRON_AVAILABILITY', label: 'IRON_OVERLOAD_SUSPECTED', message: '循環鉄利用率高値で、鉄過剰が疑われます' }
+    },
+    increased: {
+      low: { code: 'IRON_RESTRICTED_ERYTHROPOIESIS_WITH_INCREASED_STORAGE', label: 'IRON_RESTRICTED_ERYTHROPOIESIS', message: '鉄利用制限／iron-restricted erythropoiesisパターンです（貯蔵鉄増加かつ循環鉄利用率低値）' },
+      normal: { code: 'INCREASED_IRON_STORAGE', label: 'INCREASED_IRON_STORAGE', message: '貯蔵鉄増加を認めますが、循環鉄利用率は通常です' },
+      high: { code: 'IRON_OVERLOAD', label: 'IRON_OVERLOAD', message: '鉄過剰です（フェリチン300 ng/mL超かつTSAT 45％以上）' }
+    }
+  };
+
+  function buildIronMetabolismAtom(storageAtom, circulatingAtom, esaTherapy) {
+    if (!storageAtom || !circulatingAtom) return null;
+    var contextPrefix = esaTherapy === 'yes' ? 'ESA/HIF-PH阻害薬投与下では、' : '';
+    if (storageAtom.classification === 'indeterminate') {
+      return {
+        target: 'IRON_STATUS',
+        code: 'IRON_METABOLISM_INDETERMINATE',
+        direction: 'modifier',
+        weight: 0,
+        confidence: 'weak',
+        source: 'iron_metabolism',
+        classification: 'indeterminate',
+        message: contextPrefix + '鉄代謝判定不能：貯蔵鉄の中間判定を確定できません'
+      };
+    }
+    var decision = IRON_METABOLISM_DECISIONS[storageAtom.classification] &&
+      IRON_METABOLISM_DECISIONS[storageAtom.classification][circulatingAtom.classification];
+    if (!decision) return null;
+    return {
+      target: 'IRON_STATUS',
+      code: decision.code,
+      direction: 'modifier',
+      weight: 0,
+      confidence: 'moderate',
+      source: 'iron_metabolism',
+      classification: decision.label,
+      message: contextPrefix + decision.message
+    };
+  }
+
+  function buildIronStatusEvidence(values, input, inflammationStatus) {
+    var storageAtom = buildStorageIronAtom(values.ferritin, input.gfrStage, input.esaTherapy, inflammationStatus);
+    var circulatingAtom = buildCirculatingIronAtom(values.tsat);
+    var metabolismAtom = buildIronMetabolismAtom(storageAtom, circulatingAtom, input.esaTherapy);
+    var atoms = [];
+    if (storageAtom) atoms.push(storageAtom);
+    if (circulatingAtom) atoms.push(circulatingAtom);
+    if (metabolismAtom) atoms.push(metabolismAtom);
+    return {
+      atoms: atoms,
+      storageAtom: storageAtom,
+      circulatingAtom: circulatingAtom,
+      metabolismAtom: metabolismAtom
     };
   }
 
@@ -329,91 +447,6 @@
     return { label: 'INSUFFICIENT', message: '鉄欠乏性貧血の判定には、追加の鉄代謝所見が必要です', reason: 'LOW_EVIDENCE' };
   }
 
-  function decideIronOverload(atoms) {
-    var codes = collectCodes(atoms, []);
-    if (!codes.FERRITIN_HIGH_FOR_SEX) return null;
-    if (codes.TSAT_HIGH) {
-      return { label: 'IRON_OVERLOAD_SUPPORTED', message: '炎症のない状態で性別基準を超えるフェリチン高値とTSAT高値を認めます。鉄過剰について精査してください' };
-    }
-    return { label: 'IRON_OVERLOAD_SUSPECTED', message: '炎症のない状態でフェリチンが性別基準を超えています。鉄過剰を疑い、TSATなどを確認してください' };
-  }
-
-  function decideEsaIronStatus(atoms) {
-    for (var i = 0; i < atoms.length; i += 1) {
-      if (atoms[i].target === 'ESA_IRON_STATUS') {
-        return {
-          label: atoms[i].classification,
-          code: atoms[i].code,
-          message: atoms[i].message
-        };
-      }
-    }
-    return null;
-  }
-
-  function decideGeneralIronStatus(esaTherapy, atoms, score, values, sex, inflammationStatus, ironOverloadDecision) {
-    if (esaTherapy !== 'no') return null;
-    var evidenceRules = global.MedcalcAnemiaEvidenceRules || {};
-    var rules = evidenceRules.generalIronStatus || {};
-    var codes = collectCodes(atoms, []);
-    var directCodes = rules.directDeficiencyCodes || [];
-    var corroborativeCodes = rules.corroborativeDeficiencyCodes || [];
-
-    if (ironOverloadDecision) {
-      return {
-        label: 'IRON_OVERLOAD_CAUTION',
-        message: '鉄過剰警戒：' + ironOverloadDecision.message
-      };
-    }
-    if (hasAnyCode(codes, directCodes)) {
-      return {
-        label: 'IRON_DEFICIENT',
-        message: '鉄欠乏：フェリチン低値から鉄貯蔵低下が示されます'
-      };
-    }
-    if (
-      hasAnyCode(codes, corroborativeCodes) &&
-      score.otherIronSupportingSourceCount >= (rules.minOtherIronSourcesForCorroboration || 1)
-    ) {
-      return {
-        label: 'IRON_DEFICIENT',
-        message: '鉄欠乏：フェリチンと他の鉄代謝所見から鉄欠乏が支持されます'
-      };
-    }
-    if (
-      !isNumber(values.ferritin) &&
-      score.otherIronSupportingSourceCount >= (rules.minOtherIronSourcesWithoutFerritin || 2)
-    ) {
-      return {
-        label: 'IRON_DEFICIENT',
-        message: '鉄欠乏：複数の鉄代謝所見から鉄欠乏が支持されます'
-      };
-    }
-
-    var replete = rules.replete || {};
-    var ferritinMin = replete.ferritinMinByInflammation ? replete.ferritinMinByInflammation[inflammationStatus] : null;
-    var ferritinMax = replete.ferritinMaxInclusiveBySex ? replete.ferritinMaxInclusiveBySex[sex] : null;
-    var tsatInRange = isNumber(values.tsat) && values.tsat >= replete.tsatMinInclusive && values.tsat < replete.tsatMaxExclusive;
-    var ferritinInRange = isNumber(values.ferritin) && isNumber(ferritinMin) && isNumber(ferritinMax) && values.ferritin >= ferritinMin && values.ferritin <= ferritinMax;
-    if (tsatInRange && ferritinInRange && score.supportingAtoms.length === 0) {
-      return {
-        label: 'IRON_REPLETE',
-        message: '鉄充足：TSATとフェリチンが一般鉄状態の充足範囲です'
-      };
-    }
-
-    if (!isNumber(values.tsat) || !isNumber(values.ferritin) || !isNumber(ferritinMin) || !isNumber(ferritinMax)) {
-      return {
-        label: 'INDETERMINATE',
-        message: '鉄状態判定不能：TSAT、フェリチン、炎症の有無、性別を確認してください'
-      };
-    }
-    return {
-      label: 'INDETERMINATE',
-      message: '鉄状態判定不能：鉄欠乏・鉄充足・鉄過剰警戒のいずれかに確定できません'
-    };
-  }
-
   function calculateAnemiaDomain(input) {
     input = input || {};
     var hb = input.hb;
@@ -431,38 +464,30 @@
       ferritin: input.ferritin, tsat: tsat, tibc: tibc, uibc: uibc,
       mcv: mcv, crp: input.crp, rdw: input.rdw, stfr_index: input.stfrIndex
     };
-    var built = buildEvidenceAtoms(values, input.sex, hb, input.esaTherapy, input.inflammationStatus);
+    var built = buildEvidenceAtoms(values, input.sex, hb, input.inflammationStatus);
     var score = aggregateEvidence(built.atoms, values, built.contextCodes);
     var decision = decideIda(score, built.atoms, built.contextCodes);
-    var ironOverloadDecision = decideIronOverload(built.atoms);
-    var esaIronStatusDecision = decideEsaIronStatus(built.atoms);
-    var generalIronStatusDecision = decideGeneralIronStatus(
-      input.esaTherapy,
-      built.atoms,
-      score,
-      values,
-      input.sex,
-      built.inflammationStatus,
-      ironOverloadDecision
-    );
+    var ironStatus = buildIronStatusEvidence(values, input, built.inflammationStatus);
+    if (ironStatus.storageAtom) built.classifications.storage_iron = ironStatus.storageAtom.classification;
+    if (ironStatus.circulatingAtom) built.classifications.circulating_iron = ironStatus.circulatingAtom.classification;
+    if (ironStatus.metabolismAtom) built.classifications.iron_metabolism = ironStatus.metabolismAtom.classification;
     var messages = [];
 
     if (decision) messages.push(decision.message);
-    if (ironOverloadDecision && !generalIronStatusDecision && !esaIronStatusDecision) messages.push(ironOverloadDecision.message);
-    if (generalIronStatusDecision) messages.push(generalIronStatusDecision.message);
-    if (esaIronStatusDecision) messages.push(esaIronStatusDecision.message);
+    if (ironStatus.metabolismAtom) messages.push(ironStatus.metabolismAtom.message);
     return {
       messages: messages,
       evidenceAtoms: built.atoms,
+      ironStatusEvidenceAtoms: ironStatus.atoms,
       diseaseScore: score,
       idaDecision: decision,
-      ironOverloadDecision: ironOverloadDecision,
-      generalIronStatusDecision: generalIronStatusDecision,
-      esaIronStatusDecision: esaIronStatusDecision,
+      ironStatusDecision: ironStatus.metabolismAtom,
       classifications: built.classifications,
       clinicalContext: {
         anemiaStatus: built.classifications.hemoglobin || 'unknown',
-        inflammationStatus: built.inflammationStatus
+        inflammationStatus: built.inflammationStatus,
+        gfrStage: input.gfrStage || 'unknown',
+        esaTherapy: input.esaTherapy || 'unknown'
       },
       calculatedValues: {
         tsatInput: input.tsatInput,
