@@ -663,7 +663,7 @@
         <select id="inflammationAnemia">
           <option value="">選択してください</option>
           <option value="present">あり</option>
-          <option value="absent">なし</option>
+          <option value="absent" selected>なし</option>
         </select>
         <span>フェリチン解釈に使用</span>
       </div>
@@ -672,12 +672,6 @@
         <label for="rdw">RDW</label>
         <input type="number" id="rdw" step="any" />
         <span>%</span>
-      </div>
-
-      <div class="input-tile">
-        <label for="stfrIndex">sTfR/logフェリチン index</label>
-        <input type="number" id="stfrIndex" step="any" />
-        <span>ratio</span>
       </div>
 
       <div class="input-tile">
@@ -691,7 +685,8 @@
         <select id="gfrAnemia">
           <option value="">選択してください</option>
           <option value="none">CKDなし</option>
-          <option value="g1g2">G1,G2：60以上</option>
+          <option value="g1" selected>G1：90以上</option>
+          <option value="g2">G2：60～89</option>
           <option value="g3a">G3a：45～59</option>
           <option value="g3b">G3b：30～44</option>
           <option value="g4g5">G4,G5：30未満</option>
@@ -705,7 +700,7 @@
         <select id="esaTherapy">
           <option value="">選択してください</option>
           <option value="yes">あり</option>
-          <option value="no">なし</option>
+          <option value="no" selected>なし</option>
         </select>
         <span>治療状況</span>
       </div>

@@ -42,6 +42,17 @@
         try {
           var doc = this.contentDocument;
           doc.querySelector('[data-tab="anemia"]').click();
+
+          test('anemia context selectors have the requested defaults', function () {
+            assert(doc.getElementById('inflammationAnemia').value === 'absent', 'inflammation default is not absent');
+            assert(doc.getElementById('esaTherapy').value === 'no', 'ESA default is not no');
+            assert(doc.getElementById('gfrAnemia').value === 'g1', 'GFR default is not G1');
+          });
+
+          test('sTfR index input is not shown', function () {
+            assert(!doc.getElementById('stfrIndex'), 'sTfR index input remains');
+          });
+
           setValue(doc, 'gender', 'male');
           setValue(doc, 'gfrAnemia', 'none');
           setValue(doc, 'esaTherapy', 'no');
@@ -63,6 +74,33 @@
             assert(text.indexOf('貯蔵鉄：欠乏') !== -1, 'storage-iron evidence is missing');
             assert(text.indexOf('循環鉄利用率：低値') !== -1, 'circulating-availability evidence is missing');
             assert(text.indexOf('鉄代謝判定：全身性・絶対的鉄欠乏') !== -1, 'integrated evidence is missing');
+          });
+
+          test('details omit hemoglobin, inflammation, normal UIBC, and MCV comments', function () {
+            setValue(doc, 'uibc', '250');
+            setValue(doc, 'hct', '42.5');
+            setValue(doc, 'rbc', '500');
+            setValue(doc, 'mcv', '85');
+            var text = doc.querySelector('#anemia-output details').textContent;
+            assert(text.indexOf('貧血を認めます') === -1, 'hemoglobin anemia comment remains');
+            assert(text.indexOf('炎症なし') === -1, 'inflammation comment remains');
+            assert(text.indexOf('フェリチン値はそのまま解釈可能') === -1, 'ferritin interpretation remains');
+            assert(text.indexOf('フェリチン 20') === -1, 'ferritin value interpretation remains');
+            assert(text.indexOf('UIBCは参考所見です') === -1, 'normal UIBC comment remains');
+            assert(text.indexOf('MCVは正常範囲') === -1, 'MCV detail comment remains');
+            assert(doc.getElementById('anemia-output').textContent.indexOf('正球性貧血') === -1, 'MCV classification comment remains');
+            assert(doc.getElementById('anemia-output').textContent.indexOf('MCV：85.0 fL') !== -1, 'MCV numeric value is missing');
+
+            setValue(doc, 'hb', '13');
+            text = doc.querySelector('#anemia-output details').textContent;
+            assert(text.indexOf('貧血の基準を満たしません') === -1, 'hemoglobin non-anemia comment remains');
+            setValue(doc, 'hb', '12');
+          });
+
+          test('high UIBC remains visible in details', function () {
+            setValue(doc, 'uibc', '350');
+            var text = doc.querySelector('#anemia-output details').textContent;
+            assert(text.indexOf('UIBC高値は鉄欠乏を支持します') !== -1, 'high UIBC comment is missing');
           });
 
           test('ferritin alone shows intermediate evidence without a final iron-status line', function () {

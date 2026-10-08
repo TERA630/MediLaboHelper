@@ -18,7 +18,6 @@
       tsatInput: dom.getNum('tsat'),
       inflammationStatus: dom.getSelectValue('inflammationAnemia'),
       rdw: dom.getNum('rdw'),
-      stfrIndex: dom.getNum('stfrIndex'),
       sex: patient.gender,
       epo: dom.getNum('epo'),
       gfrStage: dom.getSelectValue('gfrAnemia'),

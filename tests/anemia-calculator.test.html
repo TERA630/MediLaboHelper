@@ -62,6 +62,13 @@
         assertEqual(result.ironStatusDecision.code, 'SYSTEMIC_ABSOLUTE_IRON_DEFICIENCY', 'integrated decision');
       });
 
+      test('hemoglobin anemia status remains available as clinical context', function () {
+        var present = calculate({ sex: 'male', hb: 12 });
+        var absent = calculate({ sex: 'male', hb: 13 });
+        assertEqual(present.clinicalContext.anemiaStatus, 'anemia', 'anemia present state');
+        assertEqual(absent.clinicalContext.anemiaStatus, 'not_anemic', 'anemia absent state');
+      });
+
       test('general: ferritin 30 and TSAT 20 are replete and normal', function () {
         var result = calculate({ ferritin: 30, tsatInput: 20 });
         assertEqual(atomBySource(result, 'ferritin_status').classification, 'replete', 'storage iron');
