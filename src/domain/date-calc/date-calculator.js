@@ -37,8 +37,7 @@
 
   function calculateDateCalcDomain(input) {
     var base = input.base;
-    var dateA = input.dateA;
-    var dateB = input.dateB;
+    var base2 = input.base2;
     var daysOffset = input.daysOffset;
     var weeksOffset = input.weeksOffset;
     var messages = [];
@@ -48,23 +47,22 @@
       var totalDays = daysOffset + weeksOffset * 7;
       var result = addDays(baseDate, totalDays);
 
-      messages.push('基準日: ' + fmtYMD(baseDate) + '（' + weekdayJP(baseDate) + '）');
+      messages.push('基準日1: ' + fmtYMD(baseDate) + '（' + weekdayJP(baseDate) + '）');
       messages.push('加算: 日 ' + daysOffset + ' / 週 ' + weeksOffset + '（合計 ' + totalDays + ' 日）');
       messages.push('結果日: <b>' + fmtYMD(result) + '（' + weekdayJP(result) + '）</b>');
     } else {
-      messages.push('基準日を入力すると、加算結果を表示します。');
+      messages.push('基準日1を入力すると、加算結果を表示します。');
     }
 
-    if (dateA && dateB) {
-      var a = parseDateLocal(dateA);
-      var b = parseDateLocal(dateB);
+    if (base && base2) {
+      var a = parseDateLocal(base);
+      var b = parseDateLocal(base2);
       var diff = diffDays(a, b);
 
       var sign = diff >= 0 ? '' : '－';
       messages.push('---');
-      messages.push('日付A: ' + fmtYMD(a) + '（' + weekdayJP(a) + '）');
-      messages.push('日付B: ' + fmtYMD(b) + '（' + weekdayJP(b) + '）');
-      messages.push('差（A→B）: <b>' + sign + Math.abs(diff) + ' 日</b>');
+      messages.push('基準日2: ' + fmtYMD(b) + '（' + weekdayJP(b) + '）');
+      messages.push('差（基準日1→基準日2）: <b>' + sign + Math.abs(diff) + ' 日</b>');
     }
 
     return { messages: messages };

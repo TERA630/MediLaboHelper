@@ -919,9 +919,15 @@
   <div id="dateCalc" class="tab-content">
     <div class="input-area">
       <div class="input-tile">
-        <label for="baseDate">基準日</label>
+        <label for="baseDate">基準日1</label>
         <input type="date" id="baseDate" />
-        <span>起点となる日付</span>
+        <span>日数・週数の加算と日差計算の起点</span>
+      </div>
+
+      <div class="input-tile">
+        <label for="baseDate2">基準日2</label>
+        <input type="date" id="baseDate2" />
+        <span>基準日1→基準日2 の差（日）</span>
       </div>
 
       <div class="input-tile">
@@ -936,17 +942,6 @@
         <span>週（=7日）</span>
       </div>
 
-      <div class="input-tile">
-        <label for="dateA">日付A</label>
-        <input type="date" id="dateA" />
-        <span>日数差を計算</span>
-      </div>
-
-      <div class="input-tile">
-        <label for="dateB">日付B</label>
-        <input type="date" id="dateB" />
-        <span>A→B の差（日）</span>
-      </div>
     </div>
 
     <div class="output-area" id="dateCalc-output"></div>
